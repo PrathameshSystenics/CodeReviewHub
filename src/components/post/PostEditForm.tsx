@@ -68,7 +68,6 @@ const PostEditForm = ({ post }: PostEditFormProps) => {
   //#endregion
 
   //#region State
-  const [tags, setTags] = useState<Tag[]>([]);
   const [prevCodeState, setPrevCodeState] = useState<string>(post.code ?? "");
   //#endregion
 
@@ -78,7 +77,7 @@ const PostEditForm = ({ post }: PostEditFormProps) => {
 
   const handleLanguageChangeOnFileUpload = (filename: string) => {
     const extension = "." + filename.split(".")[1];
-    const language = data?.find((lang) => lang.extension === extension);
+    const language = languages?.find((lang) => lang.extension === extension);
 
     if (language) {
       setValue("language", language.name, {
@@ -91,21 +90,17 @@ const PostEditForm = ({ post }: PostEditFormProps) => {
   };
 
   //#region Query
-  const { data } = useQuery({
+  const { data: languages } = useQuery({
     queryKey: ["languages"],
     queryFn: getLanguages,
+    staleTime: 60000,
   });
-  //#endregion
 
-  //#region Use Effects
-  useEffect(() => {
-    // fetch the tags
-    getTags()
-      .then(setTags)
-      .catch((err) => {
-        console.error("Failed to fetch tags:", err);
-      });
-  }, []);
+  const { data: tags } = useQuery({
+    queryKey: ["tags"],
+    queryFn: getTags,
+    staleTime: 60000,
+  });
   //#endregion
 
   //#region Monaco Editor
@@ -149,16 +144,16 @@ const PostEditForm = ({ post }: PostEditFormProps) => {
   };
 
   const languageOptions =
-    data?.map((language) => ({
+    languages?.map((language) => ({
       value: language.name,
       label: language.name.toUpperCase(),
     })) ?? [];
 
-  const allowedExtensions = data
+  const allowedExtensions = languages
     ?.map((language) => language.extension)
     .join(",");
 
-  const tagOptions: SelectOption[] = tags.map((tag) => ({
+  const tagOptions: SelectOption[] = (tags ?? []).map((tag) => ({
     value: String(tag.id),
     label: tag.name,
   }));

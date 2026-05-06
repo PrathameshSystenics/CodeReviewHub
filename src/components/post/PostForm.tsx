@@ -21,6 +21,7 @@ import { toast } from "react-toastify";
 import FormField from "../auth/FormField";
 import CodeSnippet from "../CodeSnippet";
 import Switch from "../UI/Switch";
+import { useQuery } from "@tanstack/react-query";
 
 //#region Font Declaration
 const space_grotesk = Space_Grotesk({
@@ -66,8 +67,6 @@ const PostForm = () => {
   //#endregion
 
   //#region State
-  const [languages, setLanguages] = useState<Languages[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
   const [prevCodeState, setPrevCodeState] = useState<string>("");
   //#endregion
 
@@ -79,7 +78,7 @@ const PostForm = () => {
 
   const handleLanguageChangeOnFileUpload = (filename: string) => {
     const extension = "." + filename.split(".")[1];
-    const language = languages.find((lang) => lang.extension === extension);
+    const language = languages?.find((lang) => lang.extension === extension);
 
     if (language) {
       setValue("language", language.name, {
@@ -91,22 +90,20 @@ const PostForm = () => {
     }
   };
 
-  //#region Use Effects
-  useEffect(() => {
-    // fetch the languages
-    getLanguages()
-      .then(setLanguages)
-      .catch((err) => {
-        console.error("Failed to fetch languages:", err);
-      });
+  //#region Query
+  const { data: languages } = useQuery({
+    queryKey: ["languages"],
+    queryFn: getLanguages,
+    staleTime: 60000,
+    initialData: [],
+  });
 
-    // fetch the tags
-    getTags()
-      .then(setTags)
-      .catch((err) => {
-        console.error("Failed to fetch tags:", err);
-      });
-  }, []);
+  const { data: tags } = useQuery({
+    queryKey: ["tags"],
+    queryFn: getTags,
+    staleTime: 60000,
+    initialData: [],
+  });
   //#endregion
 
   //#region Monaco Editor
@@ -149,16 +146,16 @@ const PostForm = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const languageOptions = languages.map((language) => ({
+  const languageOptions = languages?.map((language) => ({
     value: language.name,
     label: language.name.toUpperCase(),
   }));
 
   const allowedExtensions = languages
-    .map((language) => language.extension)
+    ?.map((language) => language.extension)
     .join(",");
 
-  const tagOptions: SelectOption[] = tags.map((tag) => ({
+  const tagOptions: SelectOption[] = (tags ?? []).map((tag) => ({
     value: String(tag.id),
     label: tag.name,
   }));
@@ -374,7 +371,7 @@ const PostForm = () => {
                       inputId="language"
                       options={languageOptions}
                       value={
-                        languageOptions.find(
+                        languageOptions?.find(
                           (option) => option.value === field.value,
                         ) ?? null
                       }
