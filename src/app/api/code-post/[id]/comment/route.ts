@@ -1,7 +1,8 @@
 import { getOptionalServerSession } from "@/auth";
 import { commentSchema } from "@/schemas";
-import { addCommentOnPost, PostCommentServiceError } from "@/services/comment.service";
+import { addCommentOnPost, getCommentsOnPost, PostCommentServiceError } from "@/services/comment.service";
 import { APIResponse } from "@/types";
+import { Comment } from "@generated/prisma/client";
 import status from "http-status";
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
@@ -53,6 +54,54 @@ export async function POST(request: NextRequest, ctx: RouteContext<'/api/code-po
             }, {
                 status: status.UNPROCESSABLE_ENTITY
             })
+        }
+        else {
+            return NextResponse.json<APIResponse>({
+                status: "error",
+                message: "Failed to add the comment on the post"
+            }, {
+                status: status.INTERNAL_SERVER_ERROR
+            })
+        }
+    }
+}
+
+export async function GET(request: NextRequest, ctx: RouteContext<'/api/code-post/[id]/comment'>) {
+    try {
+        const { id } = await ctx.params;
+
+        const user = await getOptionalServerSession();
+        if (!user) {
+            return NextResponse.json<APIResponse<string>>(
+                {
+                    message: "User not Found",
+                    status: "invalid",
+                },
+                {
+                    status: status.UNAUTHORIZED,
+                },
+            );
+        }
+
+        const comments = await getCommentsOnPost(id);
+        return NextResponse.json<APIResponse<Comment[]>>({
+            message: "Fetched the Comment Successfully",
+            status: "success",
+            data: comments
+        })
+
+    } catch (error) {
+        console.error(error)
+        if (error instanceof PostCommentServiceError) {
+            return NextResponse.json<APIResponse>(
+                {
+                    message: error.message,
+                    status: "invalid",
+                },
+                {
+                    status: error.statusCode,
+                },
+            );
         }
         else {
             return NextResponse.json<APIResponse>({

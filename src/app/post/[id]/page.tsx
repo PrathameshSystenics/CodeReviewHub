@@ -1,9 +1,11 @@
 "use server";
 
+import { getOptionalServerSession } from "@/auth";
+import CodeDisplay from "@/components/post/CodeDisplay";
 import PostStatusBadge from "@/components/post/PostStatusBadge";
 import TagDisplay from "@/components/post/TagDisplay";
 import TimeAgoComponent from "@/components/post/TimeAgoComponent";
-import CodeDisplay from "@/components/post/CodeDisplay";
+import { cn } from "@/lib/utils";
 import {
   getPostByIdService,
   PostCodeServiceError,
@@ -13,8 +15,9 @@ import { CodeStatus } from "@generated/prisma/enums";
 import status from "http-status";
 import { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getOptionalServerSession } from "@/auth";
+import { FiEdit2 } from "react-icons/fi";
 
 //#region Font Declaration
 const space_grotesk = Space_Grotesk({
@@ -87,7 +90,7 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
           </div>
         </div>
         {/* Author */}
-        <div>
+        <div className="flex flex-row flex-wrap items-center justify-between">
           <div className="flex flex-row gap-3 items-center">
             {post?.author.image ? (
               <img
@@ -114,6 +117,17 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
               <span></span>
             </div>
           </div>
+          {owner && (
+            <div className={cn(inter.className,'text-sm bg-')}>
+              <Link
+                href={`/post/${id}/edit`}
+                className="flex flex-row gap-1 items-center p-2 text-slate-300 hover:text-slate-400 bg-[#212b41] hover:bg-white/5 transition-colors rounded-xl px-4"
+              >
+                <FiEdit2 className="text-sm" />
+                <span>Edit</span>
+              </Link>
+            </div>
+          )}
         </div>
         <div>
           <TagDisplay tag={post?.postTags.map((t) => t.tag.name) ?? []} />

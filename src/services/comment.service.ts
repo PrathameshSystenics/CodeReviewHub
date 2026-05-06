@@ -1,6 +1,6 @@
 import status from "http-status";
 import { getPostByIdService } from "./postCode.service";
-import { addComment } from "@/db/comment.repo";
+import { addComment, getComments } from "@/db/comment.repo";
 
 export class PostCommentServiceError extends Error {
     constructor(
@@ -21,10 +21,26 @@ export async function addCommentOnPost(postId: string, userId: string, content: 
             throw new PostCommentServiceError("Author Cannot comment on their own post", status.BAD_REQUEST)
         }
 
+        // Disallow on adding the comment on accepted or closed post.
+        if (post.status === "ACCEPTED" || post.status === "CLOSED") {
+            throw new PostCommentServiceError("Cannot comment on Closed/Accepted Post", status.BAD_REQUEST)
+        }
+
         const commentid = await addComment(post.id, startline, content, userId, endline)
         return commentid
     } catch (error) {
         console.error(error)
         throw error;
+    }
+}
+
+export async function getCommentsOnPost(postId: string) {
+    try {
+        return await getComments(postId)
+    } catch (error) {
+        {
+            console.error(error)
+            throw error;
+        }
     }
 }
