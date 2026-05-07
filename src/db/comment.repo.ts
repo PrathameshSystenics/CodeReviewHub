@@ -36,3 +36,22 @@ export async function getComments(postid: string, parentcommentId?: string) {
         throw error;
     }
 }
+
+export async function getCommentCount(postid: string) {
+    try {
+        return await prisma.comment.groupBy({
+            by: "startlineno",
+            where: {
+                postId: postid,
+                parentId: null
+            },
+            orderBy: {
+                startlineno: "asc"
+            },
+            _count: true,
+        })
+    } catch (error) {
+        console.error(error)
+        throw error;
+    }
+}

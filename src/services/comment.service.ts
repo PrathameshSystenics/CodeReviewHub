@@ -1,6 +1,7 @@
 import status from "http-status";
 import { getPostByIdService } from "./postCode.service";
-import { addComment, getComments } from "@/db/comment.repo";
+import { addComment, getCommentCount, getComments } from "@/db/comment.repo";
+import { CommentCountOnPost } from "@/types/comment";
 
 export class PostCommentServiceError extends Error {
     constructor(
@@ -42,5 +43,21 @@ export async function getCommentsOnPost(postId: string) {
             console.error(error)
             throw error;
         }
+    }
+}
+
+export async function getCommentCountsOnPost(postId: string): Promise<CommentCountOnPost[]> {
+    try {
+        const commentcounts = await getCommentCount(postId)
+        const commentCountData: CommentCountOnPost[] = commentcounts.map(
+            (value) => ({
+                count: value._count,
+                startlineno: value.startlineno,
+            })
+        );
+        return commentCountData
+    } catch (error) {
+        console.error(error)
+        throw error;
     }
 }
