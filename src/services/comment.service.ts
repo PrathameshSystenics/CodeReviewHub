@@ -35,9 +35,9 @@ export async function addCommentOnPost(postId: string, userId: string, content: 
     }
 }
 
-export async function getCommentsOnPost(postId: string) {
+export async function getCommentsOnPost(postId: string, startLineNo: number) {
     try {
-        return await getComments(postId)
+        return await getComments(postId, startLineNo)
     } catch (error) {
         {
             console.error(error)

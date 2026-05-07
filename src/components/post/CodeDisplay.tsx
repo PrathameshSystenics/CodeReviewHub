@@ -1,13 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { JetBrains_Mono } from "next/font/google";
-import { highlightCodeByLine, type Token } from "@/lib/shiki";
+import {
+  addCommentOnPostApi,
+  getCommentCountOnPostApi,
+  getCommentsOnPostApi,
+} from "@/api/comment";
 import CodeSnippet from "@/components/CodeSnippet";
-import CodeLine from "./CodeLine";
-import LineCommentPopover from "./LineCommentPopover";
-import { addCommentOnPostApi } from "@/api/comment";
+import { highlightCodeByLine, type Token } from "@/lib/shiki";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
+import { JetBrains_Mono } from "next/font/google";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import CodeLine from "./CodeLine";
+import LineCommentPopover from "./Comment/LineCommentPopover";
+import LineCommentViewPopover from "./Comment/LineCommentViewPopover";
 
 //#region Font Declaration
 const jetbrains_mono = JetBrains_Mono({ subsets: ["latin"], weight: "400" });
@@ -21,17 +28,26 @@ interface CodeDisplayProps {
 }
 
 const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
+  //#region State
   const [lines, setLines] = useState<Token[][] | null>(null);
-
   const [selectedStart, setSelectedStart] = useState<number | null>(null);
   const [selectedEnd, setSelectedEnd] = useState<number | null>(null);
-
   const [showPopover, setShowPopover] = useState(false);
+  const [viewingCommentsLine, setViewingCommentsLine] = useState<number | null>(
+    null,
+  );
+  //#endregion
 
   // Track if user is currently dragging across line numbers
   const dragging = useRef(false);
   const dragFrom = useRef<number | null>(null);
 
+  const session = useSession();
+  const currentUserId = session.data?.user?.id;
+  const queryClient = useQueryClient();
+
+  //#region Use Effects
+  // Use Effect for Getting the Code by Line
   useEffect(() => {
     let cancelled = false;
 
@@ -46,22 +62,7 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
     };
   }, [code, language]);
 
-  const onLineMouseDown = useCallback((line: number) => {
-    if (!owner) {
-      dragging.current = true;
-      dragFrom.current = line;
-      setSelectedStart(line);
-      setSelectedEnd(line);
-      setShowPopover(false);
-    }
-  }, []);
-
-  const onLineMouseEnter = useCallback((line: number) => {
-    if (!dragging.current || dragFrom.current === null) return;
-    setSelectedStart(Math.min(dragFrom.current, line));
-    setSelectedEnd(Math.max(dragFrom.current, line));
-  }, []);
-
+  // Use Effect for Dragging the Line
   useEffect(() => {
     const onMouseUp = () => {
       if (dragging.current) {
@@ -85,17 +86,40 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
       }
     };
   }, []);
+  //#endregion
+
+  const onLineMouseDown = useCallback((line: number) => {
+    if (!owner) {
+      dragging.current = true;
+      dragFrom.current = line;
+      setSelectedStart(line);
+      setSelectedEnd(line);
+      setShowPopover(false);
+      setViewingCommentsLine(null);
+    }
+  }, []);
+
+  const onLineMouseEnter = useCallback((line: number) => {
+    if (!dragging.current || dragFrom.current === null) return;
+    setSelectedStart(Math.min(dragFrom.current, line));
+    setSelectedEnd(Math.max(dragFrom.current, line));
+  }, []);
 
   const onAddComment = useCallback((line: number) => {
     setSelectedStart(line);
     setSelectedEnd(line);
     setShowPopover(true);
+    setViewingCommentsLine(null);
   }, []);
 
   const closePopover = useCallback(() => {
     setShowPopover(false);
     setSelectedStart(null);
     setSelectedEnd(null);
+  }, []);
+
+  const closeViewPopover = useCallback(() => {
+    setViewingCommentsLine(null);
   }, []);
 
   // Submit the comment
@@ -109,20 +133,107 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
       }).then((response) => {
         if (response.status === "error") {
           toast.error(response.message);
+        } else {
+          toast.success("Comment added");
+          queryClient.invalidateQueries({ queryKey: ["comments", postid] });
         }
       });
-      
+
       closePopover();
     },
-    [closePopover],
+    [closePopover, postid, queryClient],
   );
+
+  // View comments on a line
+  const onViewComments = useCallback(
+    (line: number) => {
+      if (viewingCommentsLine === line) {
+        closeViewPopover();
+        return;
+      }
+      setShowPopover(false);
+      setSelectedStart(null);
+      setSelectedEnd(null);
+      setViewingCommentsLine(line);
+    },
+    [viewingCommentsLine, closeViewPopover],
+  );
+
+  // // Edit a comment
+  // const onEditComment = useCallback(
+  //   (commentId: string, newContent: string) => {
+  //     editCommentApi(postid, commentId, newContent).then((response) => {
+  //       if (response.status === "error") {
+  //         toast.error(response.message);
+  //       } else {
+  //         toast.success("Comment updated");
+  //         queryClient.invalidateQueries({ queryKey: ["comments", postid] });
+  //       }
+  //     });
+  //   },
+  //   [postid, queryClient],
+  // );
+
+  // // Delete a comment
+  // const onDeleteComment = useCallback(
+  //   (commentId: string) => {
+  //     deleteCommentApi(postid, commentId).then((response) => {
+  //       if (response.status === "error") {
+  //         toast.error(response.message);
+  //       } else {
+  //         toast.success("Comment deleted");
+  //         queryClient.invalidateQueries({ queryKey: ["comments", postid] });
+  //       }
+  //     });
+  //   },
+  //   [postid, queryClient],
+  // );
 
   const isSelected = (line: number) => {
     if (selectedStart === null || selectedEnd === null) return false;
     return line >= selectedStart && line <= selectedEnd;
   };
 
+  //#region React Query – fetch comments for the viewed line
+  const {
+    data: viewingCommentsResponse,
+    isLoading: viewingCommentsLoading,
+  } = useQuery({
+    queryKey: ["view-comments", postid, viewingCommentsLine],
+    queryFn: () => getCommentsOnPostApi(postid, viewingCommentsLine!),
+    enabled: viewingCommentsLine !== null,
+  });
+
+  const viewingComments = viewingCommentsResponse?.data ?? [];
+
+  // Derive the highlight range from fetched comments
+  const viewingCommentsRange = useMemo(() => {
+    if (!viewingCommentsLine || viewingComments.length === 0) return null;
+    let minStart = viewingCommentsLine;
+    let maxEnd = viewingCommentsLine;
+    for (const c of viewingComments) {
+      if (c.startlineno < minStart) minStart = c.startlineno;
+      if (c.endlineno && c.endlineno > maxEnd) maxEnd = c.endlineno;
+    }
+    return { start: minStart, end: maxEnd };
+  }, [viewingCommentsLine, viewingComments]);
+  //#endregion
+
+  const isHighlighted = (line: number) => {
+    if (!viewingCommentsRange) return false;
+    return (
+      line >= viewingCommentsRange.start && line <= viewingCommentsRange.end
+    );
+  };
+
   const plainLines = code.split("\n");
+
+  //#region React Query
+  const { data: commentsCountResponse } = useQuery({
+    queryKey: ["comments", postid],
+    queryFn: () => getCommentCountOnPostApi(postid),
+  });
+  //#endregion
 
   return (
     <CodeSnippet title={language}>
@@ -130,6 +241,10 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
         {lines
           ? lines.map((tokens, i) => {
               const lineNum = i + 1;
+              let commentCount = commentsCountResponse?.data?.find(
+                (value) => value.startlineno === lineNum,
+              ) ?? { count: 0, startlineno: 0 };
+
               return (
                 <div key={i}>
                   <CodeLine
@@ -137,12 +252,15 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
                     tokens={tokens}
                     owner={owner}
                     isSelected={isSelected(lineNum)}
+                    isHighlighted={isHighlighted(lineNum)}
+                    commentCount={commentCount.count}
                     onLineMouseDown={onLineMouseDown}
                     onLineMouseEnter={onLineMouseEnter}
                     onAddComment={onAddComment}
+                    onViewComments={onViewComments}
                   />
 
-                  {/* Show popover right below the last selected line */}
+                  {/* Show add-comment popover right below the last selected line */}
                   {!owner &&
                     showPopover &&
                     selectedEnd === lineNum &&
@@ -154,6 +272,20 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
                         onSubmit={submitComment}
                       />
                     )}
+
+                  {/* Show view-comments popover below the last line of the range */}
+                  {viewingCommentsLine !== null &&
+                    (viewingCommentsRange
+                      ? viewingCommentsRange.end === lineNum
+                      : viewingCommentsLine === lineNum) && (
+                    <LineCommentViewPopover
+                      lineNumber={lineNum}
+                      comments={viewingComments}
+                      currentUserId={currentUserId}
+                      loading={viewingCommentsLoading}
+                      onClose={closeViewPopover}
+                    />
+                  )}
                 </div>
               );
             })

@@ -4,6 +4,7 @@ import type { Token } from "@/lib/shiki";
 import { cn } from "@/lib/utils";
 import { JetBrains_Mono } from "next/font/google";
 import { GoPlus } from "react-icons/go";
+import LineCommentButton from "./Comment/LineCommentButton";
 
 //#region Font Declaration
 const jetbrains_mono = JetBrains_Mono({ subsets: ["latin"], weight: "400" });
@@ -14,35 +15,55 @@ interface CodeLineProps {
   owner: boolean;
   tokens: Token[];
   isSelected: boolean;
+  isHighlighted: boolean;
+  commentCount: number;
   onLineMouseDown: (line: number) => void;
   onLineMouseEnter: (line: number) => void;
   onAddComment: (line: number) => void;
+  onViewComments: (line: number) => void;
 }
 
 const CodeLine = ({
   lineNumber,
   tokens,
   isSelected,
+  isHighlighted,
   owner,
+  commentCount,
   onLineMouseDown,
   onLineMouseEnter,
   onAddComment,
+  onViewComments,
 }: CodeLineProps) => {
   return (
     <div
-      className={`${jetbrains_mono.className} group flex items-stretch transition-colors ${
+      className={cn(
+        jetbrains_mono.className,
+        "group flex items-stretch transition-colors border-l-2 ps-2",
         isSelected
-          ? "bg-primary/8 border-l-2 border-l-primary/60"
-          : "hover:bg-[#1a2744]/60 border-l-2 border-l-transparent"
-      }`}
+          ? "bg-primary/8 border-l-primary/60"
+          : isHighlighted
+            ? "bg-amber-500/6 border-l-amber-400/50"
+            : "hover:bg-[#1a2744]/60 border-l-transparent",
+      )}
     >
+      {/* Comment count button — at the very start */}
+      <div className="w-8 shrink-0 flex items-center justify-center">
+        <LineCommentButton
+          count={commentCount}
+          onClick={() => onViewComments(lineNumber)}
+        />
+      </div>
+
       {/* Line Number - click & drag on this to select lines */}
       <div
         className={cn(
-          "w-13 shrink-0 flex items-center justify-end pr-2 select-none text-xs transition-colors",
+          "w-10 shrink-0 flex items-center justify-end pr-2 select-none text-xs transition-colors",
           isSelected
             ? "text-primary/80 bg-primary/5"
-            : "text-slate-600 group-hover:text-slate-400",
+            : isHighlighted
+              ? "text-amber-400/70"
+              : "text-slate-600 group-hover:text-slate-400",
           !owner && "cursor-pointer",
         )}
         onMouseDown={(e) => {
@@ -53,6 +74,7 @@ const CodeLine = ({
       >
         {lineNumber}
       </div>
+
       {!owner && (
         <div className="w-9 shrink-0 flex items-center justify-center">
           <button

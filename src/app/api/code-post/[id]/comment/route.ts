@@ -59,7 +59,28 @@ export async function GET(request: NextRequest, ctx: RouteContext<'/api/code-pos
     try {
         const { id } = await ctx.params;
 
-        const comments = await getCommentsOnPost(id);
+        // Get the Query startlineNo from the url
+        const queryParams = request.nextUrl.searchParams;
+        if (!queryParams.has("startlineno")) {
+            return NextResponse.json<APIResponse>({
+                message: "startlineno is required in the query",
+                status: "invalid"
+            }, {
+                status: status.BAD_REQUEST
+            })
+        }
+
+        const startlineno = Number(queryParams.get("startlineno"))
+        if (isNaN(startlineno)) {
+            return NextResponse.json<APIResponse>({
+                message: "startlineno must be number",
+                status: "invalid"
+            }, {
+                status: status.BAD_REQUEST
+            })
+        }
+
+        const comments = await getCommentsOnPost(id, startlineno);
         return NextResponse.json<APIResponse<Comment[]>>({
             message: "Fetched the Comment Successfully",
             status: "success",

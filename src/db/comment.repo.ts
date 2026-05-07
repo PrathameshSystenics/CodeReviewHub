@@ -21,11 +21,12 @@ export async function addComment(postid: string, startline: number, content: str
     }
 }
 
-export async function getComments(postid: string, parentcommentId?: string) {
+export async function getComments(postid: string, startlineno: number, parentcommentId?: string) {
     try {
         return await prisma.comment.findMany({
             where: {
                 postId: postid,
+                startlineno: startlineno,
                 ...(parentcommentId !== undefined && {
                     parentId: parentcommentId,
                 })
