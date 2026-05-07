@@ -9,19 +9,8 @@ export async function DELETE(ctx: RouteContext<'/api/code-post/[id]'>) {
         const { id } = await ctx.params;
 
         const user = await getOptionalServerSession();
-        if (!user) {
-            return NextResponse.json<APIResponse<string>>(
-                {
-                    message: "User not Found",
-                    status: "invalid",
-                },
-                {
-                    status: status.UNAUTHORIZED,
-                },
-            );
-        }
 
-        const postid = await deletePost(id, user.user.id);
+        const postid = await deletePost(id, user!.user.id);
         return NextResponse.json<APIResponse<string>>(
             {
                 message: "Post deleted successfully",
@@ -60,20 +49,9 @@ export async function PUT(request: NextRequest, ctx: RouteContext<'/api/code-pos
         const { id } = await ctx.params;
 
         const user = await getOptionalServerSession();
-        if (!user) {
-            return NextResponse.json<APIResponse<string>>(
-                {
-                    message: "User not Found",
-                    status: "invalid",
-                },
-                {
-                    status: status.UNAUTHORIZED,
-                },
-            );
-        }
         const postbody: FormData = await request.formData();
 
-        const postid = await updatePostFormData(id, user.user.id, postbody)
+        const postid = await updatePostFormData(id, user!.user.id, postbody)
         if (postid.id) {
             return NextResponse.json<APIResponse<string>>({
                 message: "Post Updated Successfully",

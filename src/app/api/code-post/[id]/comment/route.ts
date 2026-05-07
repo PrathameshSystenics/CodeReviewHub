@@ -12,22 +12,11 @@ export async function POST(request: NextRequest, ctx: RouteContext<'/api/code-po
         const { id } = await ctx.params;
 
         const user = await getOptionalServerSession();
-        if (!user) {
-            return NextResponse.json<APIResponse<string>>(
-                {
-                    message: "User not Found",
-                    status: "invalid",
-                },
-                {
-                    status: status.UNAUTHORIZED,
-                },
-            );
-        }
 
         const body = await request.json()
         const commentschema = commentSchema.parse(body);
 
-        const commentid = await addCommentOnPost(id, user.user.id, commentschema.content, commentschema.startline, commentschema.endline)
+        const commentid = await addCommentOnPost(id, user!.user.id, commentschema.content, commentschema.startline, commentschema.endline)
 
         return NextResponse.json<APIResponse<string>>({
             message: "added the comment on the Post",
@@ -70,19 +59,6 @@ export async function GET(request: NextRequest, ctx: RouteContext<'/api/code-pos
     try {
         const { id } = await ctx.params;
 
-        const user = await getOptionalServerSession();
-        if (!user) {
-            return NextResponse.json<APIResponse<string>>(
-                {
-                    message: "User not Found",
-                    status: "invalid",
-                },
-                {
-                    status: status.UNAUTHORIZED,
-                },
-            );
-        }
-
         const comments = await getCommentsOnPost(id);
         return NextResponse.json<APIResponse<Comment[]>>({
             message: "Fetched the Comment Successfully",
@@ -106,7 +82,7 @@ export async function GET(request: NextRequest, ctx: RouteContext<'/api/code-pos
         else {
             return NextResponse.json<APIResponse>({
                 status: "error",
-                message: "Failed to add the comment on the post"
+                message: "Failed to get the comment for the post"
             }, {
                 status: status.INTERNAL_SERVER_ERROR
             })
