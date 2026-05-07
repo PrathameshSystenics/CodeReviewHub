@@ -159,6 +159,7 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
     [viewingCommentsLine, closeViewPopover],
   );
 
+  // TODO: Handle the Edit and Delete Comment
   // // Edit a comment
   // const onEditComment = useCallback(
   //   (commentId: string, newContent: string) => {
@@ -195,14 +196,12 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
   };
 
   //#region React Query – fetch comments for the viewed line
-  const {
-    data: viewingCommentsResponse,
-    isLoading: viewingCommentsLoading,
-  } = useQuery({
-    queryKey: ["view-comments", postid, viewingCommentsLine],
-    queryFn: () => getCommentsOnPostApi(postid, viewingCommentsLine!),
-    enabled: viewingCommentsLine !== null,
-  });
+  const { data: viewingCommentsResponse, isLoading: viewingCommentsLoading } =
+    useQuery({
+      queryKey: ["view-comments", postid, viewingCommentsLine],
+      queryFn: () => getCommentsOnPostApi(postid, viewingCommentsLine!),
+      enabled: viewingCommentsLine !== null,
+    });
 
   const viewingComments = viewingCommentsResponse?.data ?? [];
 
@@ -228,7 +227,7 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
 
   const plainLines = code.split("\n");
 
-  //#region React Query
+  //#region React Query Fetch Comment Count
   const { data: commentsCountResponse } = useQuery({
     queryKey: ["comments", postid],
     queryFn: () => getCommentCountOnPostApi(postid),
@@ -278,14 +277,14 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
                     (viewingCommentsRange
                       ? viewingCommentsRange.end === lineNum
                       : viewingCommentsLine === lineNum) && (
-                    <LineCommentViewPopover
-                      lineNumber={lineNum}
-                      comments={viewingComments}
-                      currentUserId={currentUserId}
-                      loading={viewingCommentsLoading}
-                      onClose={closeViewPopover}
-                    />
-                  )}
+                      <LineCommentViewPopover
+                        lineNumber={lineNum}
+                        comments={viewingComments}
+                        currentUserId={currentUserId}
+                        loading={viewingCommentsLoading}
+                        onClose={closeViewPopover}
+                      />
+                    )}
                 </div>
               );
             })
