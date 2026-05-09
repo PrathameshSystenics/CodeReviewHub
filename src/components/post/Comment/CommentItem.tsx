@@ -6,7 +6,7 @@ import { CommentWithAuthor } from "@/types/comment";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { BsThreeDots } from "react-icons/bs";
-import { VscEdit, VscTrash } from "react-icons/vsc";
+import { VscEdit, VscSend, VscTrash } from "react-icons/vsc";
 
 //#region Font Declaration
 const inter = Inter({ subsets: ["latin"] });
@@ -31,6 +31,7 @@ const CommentItem = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
+  const [replyContent, setReplyContent] = useState("");
   //#endregion
 
   const menuRef = useRef<HTMLDivElement>(null);
@@ -80,6 +81,22 @@ const CommentItem = ({
     }
   };
 
+  const handleSubmitReply = () => {
+    if (!replyContent.trim()) return;
+    // TODO: Wire up reply API
+    setReplyContent("");
+  };
+
+  const handleReplyKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      handleSubmitReply();
+    }
+    if (e.key === "Escape") {
+      setReplyContent("");
+    }
+  };
+
   const formattedDate = new Date(comment.createdAt).toLocaleDateString(
     "en-US",
     { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" },
@@ -100,7 +117,9 @@ const CommentItem = ({
               name={comment.author.name!}
               image={comment.author.image}
             />
-            <span className={cn(inter.className, "text-[0.7em] text-slate-300")}>
+            <span
+              className={cn(inter.className, "text-[0.7em] text-slate-300")}
+            >
               {comment.author.name}
             </span>
           </div>
@@ -188,6 +207,28 @@ const CommentItem = ({
         >
           {comment.content}
         </p>
+      )}
+
+      {/* Reply input */}
+      {!isOwner && !editing && (
+        <div className="flex items-center gap-1.5 mt-2">
+          <input
+            type="text"
+            value={replyContent}
+            onChange={(e) => setReplyContent(e.target.value)}
+            onKeyDown={handleReplyKeyDown}
+            placeholder="Write a reply…"
+            className={`${jetbrains_mono.className} flex-1 bg-[#0a1220] border border-slate-700/40 rounded-lg px-2.5 py-1.5 text-[0.75em] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all`}
+          />
+          <button
+            onClick={handleSubmitReply}
+            disabled={!replyContent.trim()}
+            title="Send reply (Ctrl+Enter)"
+            className="shrink-0 p-1.5 rounded-lg bg-primary/90 hover:bg-primary text-slate-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+          >
+            <VscSend className="text-sm" />
+          </button>
+        </div>
       )}
     </div>
   );
