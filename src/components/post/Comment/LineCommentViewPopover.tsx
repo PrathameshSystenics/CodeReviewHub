@@ -1,14 +1,14 @@
 "use client";
 
-import { Inter, JetBrains_Mono } from "next/font/google";
-import { VscClose, VscComment, VscLoading } from "react-icons/vsc";
 import {
   Popover,
   PopoverAnchor,
   PopoverContent,
 } from "@/components/UI/popover";
+import { CommentWithAuthor } from "@/types/comment";
+import { Inter, JetBrains_Mono } from "next/font/google";
+import { VscClose, VscComment, VscLoading } from "react-icons/vsc";
 import CommentItem from "./CommentItem";
-import { Comment } from "@generated/prisma/client";
 
 
 //#region Font Declaration
@@ -18,10 +18,11 @@ const jetbrains_mono = JetBrains_Mono({ subsets: ["latin"], weight: "400" });
 
 interface LineCommentViewPopoverProps {
   lineNumber: number;
-  comments: Comment[];
+  comments: CommentWithAuthor[];
   currentUserId: string | undefined;
   loading: boolean;
   onClose: () => void;
+  // TODO: Check for the Edit and Delete Comment also
   // onEdit: (commentId: string, newContent: string) => void;
   // onDelete: (commentId: string) => void;
 }

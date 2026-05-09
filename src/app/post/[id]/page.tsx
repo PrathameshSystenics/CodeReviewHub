@@ -1,6 +1,7 @@
 "use server";
 
 import { getOptionalServerSession } from "@/auth";
+import UserProfileImage from "@/components/auth/UserProfileImage";
 import CodeDisplay from "@/components/post/CodeDisplay";
 import PostStatusBadge from "@/components/post/PostStatusBadge";
 import TagDisplay from "@/components/post/TagDisplay";
@@ -92,17 +93,12 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
         {/* Author */}
         <div className="flex flex-row flex-wrap items-center justify-between">
           <div className="flex flex-row gap-3 items-center">
-            {post?.author.image ? (
-              <img
-                src={post?.author.image}
-                alt={post?.author.name || "Author"}
-                className="w-12 h-12 rounded-full"
-              />
-            ) : (
-              <span className="bg-linear-to-r from-primary to-primary-dark font-semibold px-3 py-3 text-black rounded-full uppercase text-sm">
-                {post?.author.name?.slice(0, 2) ?? "US"}
-              </span>
-            )}
+            <UserProfileImage
+              badgeclassName="py-3 px-3"
+              imageclassName="w-12 h-12"
+              name={post?.author.name!}
+              image={post?.author.image}
+            />
             <div className="flex flex-col gap-0">
               <span
                 className={`${inter.className} text-sm font-medium text-slate-300`}
@@ -118,7 +114,7 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
             </div>
           </div>
           {owner && (
-            <div className={cn(inter.className,'text-sm bg-')}>
+            <div className={cn(inter.className, "text-sm bg-")}>
               <Link
                 href={`/post/${id}/edit`}
                 className="flex flex-row gap-1 items-center p-2 text-slate-300 hover:text-slate-400 bg-[#212b41] hover:bg-white/5 transition-colors rounded-xl px-4"

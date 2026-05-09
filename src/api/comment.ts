@@ -1,7 +1,6 @@
 import { CommentInputs } from "@/schemas/comment";
 import { APIResponse } from "@/types";
-import { CommentCountOnPost } from "@/types/comment";
-import { Comment } from "@generated/prisma/client";
+import { CommentCountOnPost, CommentWithAuthor } from "@/types/comment";
 
 export async function addCommentOnPostApi(postid: string, commentbody: CommentInputs): Promise<APIResponse<string>> {
     const response = await fetch(`/api/code-post/${postid}/comment`, {
@@ -11,7 +10,7 @@ export async function addCommentOnPostApi(postid: string, commentbody: CommentIn
     return response.json()
 }
 
-export async function getCommentsOnPostApi(postid: string, startlineno: number): Promise<APIResponse<Comment[] | null>> {
+export async function getCommentsOnPostApi(postid: string, startlineno: number): Promise<APIResponse<CommentWithAuthor[] | null>> {
     const response = await fetch(`/api/code-post/${postid}/comment?startlineno=${startlineno}`, {
         method: "GET"
     })

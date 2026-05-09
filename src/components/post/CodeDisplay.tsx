@@ -36,6 +36,7 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
   const [viewingCommentsLine, setViewingCommentsLine] = useState<number | null>(
     null,
   );
+  const viewingCommentsLineRef = useRef<number | null>(null);
   //#endregion
 
   // Track if user is currently dragging across line numbers
@@ -119,6 +120,7 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
   }, []);
 
   const closeViewPopover = useCallback(() => {
+    viewingCommentsLineRef.current = null;
     setViewingCommentsLine(null);
   }, []);
 
@@ -147,16 +149,17 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
   // View comments on a line
   const onViewComments = useCallback(
     (line: number) => {
-      if (viewingCommentsLine === line) {
+      if (viewingCommentsLineRef.current === line) {
         closeViewPopover();
         return;
       }
-      setShowPopover(false);
-      setSelectedStart(null);
-      setSelectedEnd(null);
+      viewingCommentsLineRef.current = line;
+      setShowPopover((prev) => (prev ? false : prev));
+      setSelectedStart((prev) => (prev !== null ? null : prev));
+      setSelectedEnd((prev) => (prev !== null ? null : prev));
       setViewingCommentsLine(line);
     },
-    [viewingCommentsLine, closeViewPopover],
+    [closeViewPopover],
   );
 
   // TODO: Handle the Edit and Delete Comment
@@ -203,7 +206,10 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
       enabled: viewingCommentsLine !== null,
     });
 
-  const viewingComments = viewingCommentsResponse?.data ?? [];
+  const viewingComments = useMemo(
+    () => viewingCommentsResponse?.data ?? [],
+    [viewingCommentsResponse?.data],
+  );
 
   // Derive the highlight range from fetched comments
   const viewingCommentsRange = useMemo(() => {
@@ -240,9 +246,9 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
         {lines
           ? lines.map((tokens, i) => {
               const lineNum = i + 1;
-              let commentCount = commentsCountResponse?.data?.find(
+              const commentCount = commentsCountResponse?.data?.find(
                 (value) => value.startlineno === lineNum,
-              ) ?? { count: 0, startlineno: 0 };
+              )?.count ?? 0;
 
               return (
                 <div key={i}>
@@ -252,7 +258,7 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
                     owner={owner}
                     isSelected={isSelected(lineNum)}
                     isHighlighted={isHighlighted(lineNum)}
-                    commentCount={commentCount.count}
+                    commentCount={commentCount}
                     onLineMouseDown={onLineMouseDown}
                     onLineMouseEnter={onLineMouseEnter}
                     onAddComment={onAddComment}
@@ -272,11 +278,9 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
                       />
                     )}
 
-                  {/* Show view-comments popover below the last line of the range */}
+                  {/* Show view-comments popover below the clicked line */}
                   {viewingCommentsLine !== null &&
-                    (viewingCommentsRange
-                      ? viewingCommentsRange.end === lineNum
-                      : viewingCommentsLine === lineNum) && (
+                    viewingCommentsLine === lineNum && (
                       <LineCommentViewPopover
                         lineNumber={lineNum}
                         comments={viewingComments}

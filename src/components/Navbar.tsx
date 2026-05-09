@@ -124,6 +124,7 @@ const Navbar = () => {
           <nav className="hidden md:block pl-2 text-sm">
             <ul className="text-tertiary font-semibold flex flex-row gap-3">
               <li>
+                {/* TODO: Handle these Links */}
                 <Link href={"/posts"}>
                   <span>POSTS</span>
                 </Link>

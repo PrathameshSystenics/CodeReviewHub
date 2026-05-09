@@ -33,13 +33,15 @@ const LineCommentPopover = ({
   const lineLabel =
     startLine === endLine
       ? `Line ${startLine}`
-      : `Lines ${startLine}–${endLine}`;
+      : `Lines ${startLine}-${endLine}`;
 
+  //#region Use Effects
   // Auto-focus the textarea when popover opens
   useEffect(() => {
     const timer = setTimeout(() => textareaRef.current?.focus(), 50);
     return () => clearTimeout(timer);
   }, []);
+  //#endregion
 
   // Submit the comment
   const handleSubmit = () => {

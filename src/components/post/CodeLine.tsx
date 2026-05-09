@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { JetBrains_Mono } from "next/font/google";
 import { GoPlus } from "react-icons/go";
 import LineCommentButton from "./Comment/LineCommentButton";
+import { memo } from "react";
 
 //#region Font Declaration
 const jetbrains_mono = JetBrains_Mono({ subsets: ["latin"], weight: "400" });
@@ -106,4 +107,4 @@ const CodeLine = ({
   );
 };
 
-export default CodeLine;
+export default memo(CodeLine);

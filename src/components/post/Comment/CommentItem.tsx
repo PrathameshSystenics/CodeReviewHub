@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import UserProfileImage from "@/components/auth/UserProfileImage";
+import { cn } from "@/lib/utils";
+import { CommentWithAuthor } from "@/types/comment";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { BsThreeDots } from "react-icons/bs";
 import { VscEdit, VscTrash } from "react-icons/vsc";
-import { Comment } from "@generated/prisma/client";
 
 //#region Font Declaration
 const inter = Inter({ subsets: ["latin"] });
@@ -12,8 +14,9 @@ const jetbrains_mono = JetBrains_Mono({ subsets: ["latin"], weight: "400" });
 //#endregion
 
 interface CommentItemProps {
-  comment: Comment;
+  comment: CommentWithAuthor;
   isOwner: boolean;
+  // TODO: Handle Edit and Delete Comment
   // onEdit: (commentId: string, newContent: string) => void;
   // onDelete: (commentId: string) => void;
 }
@@ -24,22 +27,27 @@ const CommentItem = ({
   // onEdit,
   // onDelete,
 }: CommentItemProps) => {
+  //#region State Hooks
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
+  //#endregion
+
   const menuRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const handleMouseDown = useEffectEvent((e: MouseEvent) => {
+    if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      setMenuOpen(false);
+    }
+  });
+
+  //#region UseEffect Hooks
   // Close menu on outside click
   useEffect(() => {
     if (!menuOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
   }, [menuOpen]);
 
   // Auto-focus textarea when editing starts
@@ -48,10 +56,11 @@ const CommentItem = ({
       setTimeout(() => textareaRef.current?.focus(), 50);
     }
   }, [editing]);
+  //#endregion
 
   const lineLabel =
     comment.endlineno && comment.endlineno !== comment.startlineno
-      ? `L${comment.startlineno}–${comment.endlineno}`
+      ? `L${comment.startlineno}-${comment.endlineno}`
       : `L${comment.startlineno}`;
 
   const handleSaveEdit = () => {
@@ -77,10 +86,24 @@ const CommentItem = ({
   );
 
   return (
-    <div className={`${inter.className} group/comment relative rounded-lg border border-slate-700/30 bg-[#0f1825]/80 p-3 transition-colors hover:border-slate-600/40`}>
+    <div
+      className={`${inter.className} group/comment relative rounded-lg border border-slate-700/30 bg-[#0f1825]/80 p-3 transition-colors hover:border-slate-600/40`}
+    >
       {/* Header row */}
       <div className="flex items-center justify-between mb-1.5">
         <div className="flex items-center gap-2">
+          {/* User Comment Profile Image */}
+          <div className="flex flex-row items-center gap-1">
+            <UserProfileImage
+              badgeclassName="px-2 py-1.5 text-[0.6em]"
+              imageclassName="w-5 h-5"
+              name={comment.author.name!}
+              image={comment.author.image}
+            />
+            <span className={cn(inter.className, "text-[0.7em] text-slate-300")}>
+              {comment.author.name}
+            </span>
+          </div>
           <span
             className={`${jetbrains_mono.className} text-[10px] text-primary/70 bg-primary/8 px-1.5 py-0.5 rounded font-medium`}
           >
@@ -160,7 +183,9 @@ const CommentItem = ({
           </div>
         </div>
       ) : (
-        <p className={`${jetbrains_mono.className} text-sm text-slate-300 leading-relaxed whitespace-pre-wrap`}>
+        <p
+          className={`${jetbrains_mono.className} text-[0.8em] text-slate-300 leading-relaxed whitespace-pre-wrap`}
+        >
           {comment.content}
         </p>
       )}

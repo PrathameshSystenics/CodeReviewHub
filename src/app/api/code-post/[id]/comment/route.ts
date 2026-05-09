@@ -2,7 +2,7 @@ import { getOptionalServerSession } from "@/auth";
 import { commentSchema } from "@/schemas";
 import { addCommentOnPost, getCommentsOnPost, PostCommentServiceError } from "@/services/comment.service";
 import { APIResponse } from "@/types";
-import { Comment } from "@generated/prisma/client";
+import { CommentWithAuthor } from "@/types/comment";
 import status from "http-status";
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
@@ -80,8 +80,8 @@ export async function GET(request: NextRequest, ctx: RouteContext<'/api/code-pos
             })
         }
 
-        const comments = await getCommentsOnPost(id, startlineno);
-        return NextResponse.json<APIResponse<Comment[]>>({
+        const comments: CommentWithAuthor[] = await getCommentsOnPost(id, startlineno);
+        return NextResponse.json<APIResponse<CommentWithAuthor[]>>({
             message: "Fetched the Comment Successfully",
             status: "success",
             data: comments
