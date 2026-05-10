@@ -217,7 +217,7 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
     let minStart = viewingCommentsLine;
     let maxEnd = viewingCommentsLine;
     for (const c of viewingComments) {
-      if (c.startlineno < minStart) minStart = c.startlineno;
+      if (c.startlineno! < minStart) minStart = c.startlineno!;
       if (c.endlineno && c.endlineno > maxEnd) maxEnd = c.endlineno;
     }
     return { start: minStart, end: maxEnd };

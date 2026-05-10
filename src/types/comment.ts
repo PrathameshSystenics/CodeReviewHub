@@ -5,7 +5,7 @@ export interface CommentCountOnPost {
     startlineno: number
 }
 
-export type CommentWithAuthor = Prisma.CommentGetPayload<{
+export type CommentWithAuthorAndReplyCount = Omit<Prisma.CommentGetPayload<{
     include: {
         author: {
             select: {
@@ -14,5 +14,12 @@ export type CommentWithAuthor = Prisma.CommentGetPayload<{
                 image: true;
             };
         };
+        _count: {
+            select: {
+                replies: true;
+            };
+        };
     };
-}>
+}>, "_count"> & {
+    replyCount: number;
+}

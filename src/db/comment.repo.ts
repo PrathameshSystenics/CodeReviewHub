@@ -1,5 +1,5 @@
 import { prisma } from "@/prisma";
-import { CommentWithAuthor } from "@/types/comment";
+import { CommentWithAuthorAndReplyCount } from "@/types/comment";
 
 export async function addComment(postid: string, startline: number | null, content: string, userid: string, endline?: number | null, commentId?: string | null) {
     try {
@@ -43,9 +43,9 @@ export async function getComment(commentId: string) {
     }
 }
 
-export async function getComments(postid: string, startlineno: number, parentcommentId?: string): Promise<CommentWithAuthor[]> {
+export async function getComments(postid: string, startlineno: number | null, parentcommentId?: string): Promise<CommentWithAuthorAndReplyCount[]> {
     try {
-        return await prisma.comment.findMany({
+        const comments = await prisma.comment.findMany({
             orderBy: {
                 createdAt: "desc"
             },
@@ -63,9 +63,18 @@ export async function getComments(postid: string, startlineno: number, parentcom
                         name: true,
                         image: true
                     }
+                },
+                _count: {
+                    select: {
+                        replies: true
+                    }
                 }
             }
         })
+        return comments.map(({ _count, ...rest }) => ({
+            ...rest,
+            replyCount: _count.replies
+        }))
     } catch (error) {
         console.error(error)
         throw error;

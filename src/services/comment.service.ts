@@ -66,6 +66,15 @@ export async function getCommentsOnPost(postId: string, startLineNo: number) {
     }
 }
 
+export async function getRepliesOnComment(postId: string, commentId: string) {
+    try {
+        return await getComments(postId, null, commentId)
+    } catch (error) {
+        console.error(error)
+        throw error
+    }
+}
+
 export async function getCommentCountsOnPost(postId: string): Promise<CommentCountOnPost[]> {
     try {
         const commentcounts = await getCommentCount(postId)

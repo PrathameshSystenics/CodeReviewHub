@@ -1,8 +1,8 @@
 import { getOptionalServerSession } from "@/auth";
 import { commentSchema } from "@/schemas";
-import { addCommentOnPost, getCommentsOnPost, PostCommentServiceError } from "@/services/comment.service";
+import { addCommentOnPost, getCommentsOnPost, getRepliesOnComment, PostCommentServiceError } from "@/services/comment.service";
 import { APIResponse } from "@/types";
-import { CommentWithAuthor } from "@/types/comment";
+import { CommentWithAuthorAndReplyCount } from "@/types/comment";
 import status from "http-status";
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
@@ -59,30 +59,50 @@ export async function GET(request: NextRequest, ctx: RouteContext<'/api/code-pos
     try {
         const { id } = await ctx.params;
 
-        // Get the Query startlineNo from the url
         const queryParams = request.nextUrl.searchParams;
-        if (!queryParams.has("startlineno")) {
+        const hasStartLine = queryParams.has("startlineno");
+        const hasParentComment = queryParams.has("parentcommentid");
+
+        // Disallow providing both params at the same time
+        if (hasStartLine && hasParentComment) {
             return NextResponse.json<APIResponse>({
-                message: "startlineno is required in the query",
+                message: "Cannot provide both startlineno and parentcommentid",
                 status: "invalid"
             }, {
                 status: status.BAD_REQUEST
             })
         }
 
-        const startlineno = Number(queryParams.get("startlineno"))
-        if (isNaN(startlineno)) {
+        // At least one must be provided
+        if (!hasStartLine && !hasParentComment) {
             return NextResponse.json<APIResponse>({
-                message: "startlineno must be number",
+                message: "Either startlineno or parentcommentid is required",
                 status: "invalid"
             }, {
                 status: status.BAD_REQUEST
             })
         }
 
-        const comments: CommentWithAuthor[] = await getCommentsOnPost(id, startlineno);
-        return NextResponse.json<APIResponse<CommentWithAuthor[]>>({
-            message: "Fetched the Comment Successfully",
+        let comments: CommentWithAuthorAndReplyCount[];
+
+        if (hasStartLine) {
+            const startlineno = Number(queryParams.get("startlineno"))
+            if (isNaN(startlineno)) {
+                return NextResponse.json<APIResponse>({
+                    message: "startlineno must be a number",
+                    status: "invalid"
+                }, {
+                    status: status.BAD_REQUEST
+                })
+            }
+            comments = await getCommentsOnPost(id, startlineno);
+        } else {
+            const parentcommentid = queryParams.get("parentcommentid")!;
+            comments = await getRepliesOnComment(id, parentcommentid);
+        }
+
+        return NextResponse.json<APIResponse<CommentWithAuthorAndReplyCount[]>>({
+            message: "Fetched the Comments Successfully",
             status: "success",
             data: comments
         })
@@ -110,3 +130,4 @@ export async function GET(request: NextRequest, ctx: RouteContext<'/api/code-pos
         }
     }
 }
+

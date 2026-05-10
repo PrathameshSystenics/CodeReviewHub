@@ -5,7 +5,7 @@ import {
   PopoverAnchor,
   PopoverContent,
 } from "@/components/UI/popover";
-import { CommentWithAuthor } from "@/types/comment";
+import { CommentWithAuthorAndReplyCount } from "@/types/comment";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { VscClose, VscComment, VscLoading } from "react-icons/vsc";
 import CommentItem from "./CommentItem";
@@ -18,7 +18,7 @@ const jetbrains_mono = JetBrains_Mono({ subsets: ["latin"], weight: "400" });
 
 interface LineCommentViewPopoverProps {
   lineNumber: number;
-  comments: CommentWithAuthor[];
+  comments: CommentWithAuthorAndReplyCount[];
   currentUserId: string | undefined;
   loading: boolean;
   onClose: () => void;
@@ -74,7 +74,7 @@ const LineCommentViewPopover = ({
         </div>
 
         {/* Comments list */}
-        <div className="p-3 flex flex-col gap-2 max-h-72 overflow-y-auto custom-scrollbar">
+        <div className="p-3 flex flex-col gap-2 max-h-96 overflow-y-auto custom-scrollbar">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-6 gap-2">
               <VscLoading className="text-primary text-lg animate-spin" />
@@ -90,6 +90,7 @@ const LineCommentViewPopover = ({
                 key={comment.id}
                 comment={comment}
                 isOwner={currentUserId === comment.authorId}
+                currentUserId={currentUserId}
                 // onEdit={onEdit}
                 // onDelete={onDelete}
               />
