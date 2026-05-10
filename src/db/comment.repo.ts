@@ -1,7 +1,7 @@
 import { prisma } from "@/prisma";
 import { CommentWithAuthor } from "@/types/comment";
 
-export async function addComment(postid: string, startline: number, content: string, userid: string, endline?: number | null) {
+export async function addComment(postid: string, startline: number | null, content: string, userid: string, endline?: number | null, commentId?: string | null) {
     try {
         const comment = await prisma.comment.create({
             data: {
@@ -9,7 +9,8 @@ export async function addComment(postid: string, startline: number, content: str
                 authorId: userid,
                 postId: postid,
                 startlineno: startline,
-                endlineno: endline
+                endlineno: endline,
+                parentId: commentId
             }, select: {
                 id: true
             }
@@ -19,6 +20,26 @@ export async function addComment(postid: string, startline: number, content: str
     } catch (error) {
         console.error(error)
         throw error;
+    }
+}
+
+export async function getComment(commentId: string) {
+    try {
+        return await prisma.comment.findFirst({
+            where: {
+                id: commentId
+            }, include: {
+                author: {
+                    select: {
+                        id: true,
+                        email: true
+                    }
+                }
+            }
+        })
+    } catch (error) {
+        console.error(error)
+        throw error
     }
 }
 

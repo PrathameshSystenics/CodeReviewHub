@@ -113,7 +113,7 @@ model Review {
 model Comment {
   id          String @id @default(cuid())
   content     String
-  startlineno Int
+  startlineno Int?
   endlineno   Int?
 
   postId String

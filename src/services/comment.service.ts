@@ -1,6 +1,6 @@
 import status from "http-status";
 import { getPostByIdService } from "./postCode.service";
-import { addComment, getCommentCount, getComments } from "@/db/comment.repo";
+import { addComment, getComment, getCommentCount, getComments } from "@/db/comment.repo";
 import { CommentCountOnPost } from "@/types/comment";
 
 export class PostCommentServiceError extends Error {
@@ -35,6 +35,26 @@ export async function addCommentOnPost(postId: string, userId: string, content: 
     }
 }
 
+export async function replyOnComment(commentId: string, content: string, userid: string) {
+    try {
+        const comment = await getComment(commentId)
+
+        if (!comment) {
+            throw new PostCommentServiceError("Comment Not Found", status.NOT_FOUND)
+        }
+
+        else if (comment.authorId === userid) {
+            throw new PostCommentServiceError("Author Cannot Reply on their own Comment", status.NOT_ACCEPTABLE)
+        }
+
+        const replyId = await addComment(comment.postId, null, content, userid, null, comment.id)
+        return replyId
+    } catch (error) {
+        console.log(error)
+        throw error;
+    }
+}
+
 export async function getCommentsOnPost(postId: string, startLineNo: number) {
     try {
         return await getComments(postId, startLineNo)
@@ -52,7 +72,7 @@ export async function getCommentCountsOnPost(postId: string): Promise<CommentCou
         const commentCountData: CommentCountOnPost[] = commentcounts.map(
             (value) => ({
                 count: value._count,
-                startlineno: value.startlineno,
+                startlineno: value.startlineno!,
             })
         );
         return commentCountData

@@ -27,6 +27,6 @@ export const config: ProxyConfig = {
         '/profile/:path*',
         '/post/:path*',
         '/api/code-post',
-        '/api/code-post/:path*'
+        '/api/code-post/:path*',
     ]
 }

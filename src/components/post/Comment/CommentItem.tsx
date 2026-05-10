@@ -1,5 +1,6 @@
 "use client";
 
+import { replyOnCommentApi } from "@/api/comment";
 import UserProfileImage from "@/components/auth/UserProfileImage";
 import { cn } from "@/lib/utils";
 import { CommentWithAuthor } from "@/types/comment";
@@ -81,9 +82,15 @@ const CommentItem = ({
     }
   };
 
-  const handleSubmitReply = () => {
+  const handleSubmitReply = async () => {
     if (!replyContent.trim()) return;
-    // TODO: Wire up reply API
+
+    const reply = await replyOnCommentApi(comment.postId, comment.id, {
+      content: replyContent,
+    });
+    if(reply.status==="success"){
+      // TODO: Show the newly added reply comment
+    }
     setReplyContent("");
   };
 

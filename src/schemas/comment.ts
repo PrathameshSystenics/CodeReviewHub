@@ -6,4 +6,9 @@ export const commentSchema = z.object({
     endline: z.number().nullable()
 })
 
+export const replySchema = z.object({
+    content: z.string("Reply is required for adding the comment")
+})
+
+export type ReplyCommentInputs = z.infer<typeof replySchema>;
 export type CommentInputs = z.infer<typeof commentSchema>;
