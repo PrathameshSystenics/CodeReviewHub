@@ -2,7 +2,7 @@ import { getOptionalServerSession } from "@/auth";
 import { APIResponse } from "@/types";
 import status from "http-status";
 import { NextRequest, NextResponse } from "next/server";
-import { PostCommentServiceError, replyOnComment } from "@/services/comment.service";
+import { deleteCommentOrReply, PostCommentServiceError, replyOnComment } from "@/services/comment.service";
 import { replySchema } from "@/schemas/comment";
 import { ZodError } from "zod";
 
@@ -47,6 +47,41 @@ export async function POST(request: NextRequest, ctx: RouteContext<'/api/code-po
             return NextResponse.json<APIResponse>({
                 status: "error",
                 message: "Failed to add the reply to the comment"
+            }, {
+                status: status.INTERNAL_SERVER_ERROR
+            })
+        }
+    }
+}
+
+export async function DELETE(_request: NextRequest, ctx: RouteContext<'/api/code-post/[id]/comment/[commentId]'>) {
+    try {
+        const { commentId } = await ctx.params
+
+        const user = await getOptionalServerSession()
+        const deletedId = await deleteCommentOrReply(commentId, user!)
+
+        return NextResponse.json<APIResponse<string>>({
+            message: 'Deleted Comment Successfully',
+            status: "success",
+            data: deletedId
+        })
+    } catch (error) {
+        if (error instanceof PostCommentServiceError) {
+            return NextResponse.json<APIResponse>(
+                {
+                    message: error.message,
+                    status: "invalid",
+                },
+                {
+                    status: error.statusCode,
+                },
+            );
+        }
+        else {
+            return NextResponse.json<APIResponse>({
+                status: "error",
+                message: "Failed to delete the comment"
             }, {
                 status: status.INTERNAL_SERVER_ERROR
             })

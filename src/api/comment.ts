@@ -39,3 +39,10 @@ export async function replyOnCommentApi(postid: string, commentId: string, reply
     return response.json()
 
 }
+
+export async function deleteCommentReplyApi(commentId: string, postId: string): Promise<APIResponse<string | null>> {
+    const response = await fetch(`/api/code-post/${postId}/comment/${commentId}`, {
+        method: "DELETE"
+    })
+    return response.json()
+}

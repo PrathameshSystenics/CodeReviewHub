@@ -99,3 +99,15 @@ export async function getCommentCount(postid: string) {
         throw error;
     }
 }
+
+export async function deleteComment(commentId: string) {
+    const deleted = await prisma.comment.delete({
+        where: {
+            id: commentId
+        },
+        select: {
+            id: true
+        }
+    })
+    return deleted.id
+}

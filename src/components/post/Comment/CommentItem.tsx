@@ -1,16 +1,27 @@
 "use client";
 
-import { getRepliesOnCommentApi, replyOnCommentApi } from "@/api/comment";
+import {
+  deleteCommentReplyApi,
+  getRepliesOnCommentApi,
+  replyOnCommentApi,
+} from "@/api/comment";
 import UserProfileImage from "@/components/auth/UserProfileImage";
 import { cn } from "@/lib/utils";
 import { CommentWithAuthorAndReplyCount } from "@/types/comment";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+} from "react";
 import { BsThreeDots } from "react-icons/bs";
 import { FaAngleDown, FaAngleUp } from "react-icons/fa";
 import { VscEdit, VscLoading, VscSend, VscTrash } from "react-icons/vsc";
 import TimeAgoComponent from "../TimeAgoComponent";
+import { toast } from "react-toastify";
 
 //#region Font Declaration
 const inter = Inter({ subsets: ["latin"] });
@@ -24,7 +35,6 @@ interface CommentItemProps {
   depth?: number;
   // TODO: Handle Edit and Delete Comment
   // onEdit: (commentId: string, newContent: string) => void;
-  // onDelete: (commentId: string) => void;
 }
 
 const CommentItem = ({
@@ -33,7 +43,6 @@ const CommentItem = ({
   currentUserId,
   depth = 0,
   // onEdit,
-  // onDelete,
 }: CommentItemProps) => {
   //#region State Hooks
   const [menuOpen, setMenuOpen] = useState(false);
@@ -118,7 +127,9 @@ const CommentItem = ({
       queryclient.invalidateQueries({
         queryKey: ["replies", comment.postId, comment.id],
       });
-      // TODO: Increase the Replies count of the replied comment. using the queryclient
+      queryclient.invalidateQueries({
+        queryKey: ["view-comments", comment.postId, comment.startlineno],
+      });
     }
     setReplyContent("");
   };
@@ -136,6 +147,22 @@ const CommentItem = ({
   const handleToggleReplies = () => {
     setShowReplies((prev) => !prev);
   };
+
+  const handleDelete = useCallback(async (commentId: string) => {
+    const deletedResponse = await deleteCommentReplyApi(
+      commentId,
+      comment.postId,
+    );
+    if (deletedResponse.status === "success") {
+      toast.info("Deleted the Comment Successfully");
+      queryclient.invalidateQueries({
+        queryKey: ["replies", comment.postId, comment.id],
+      });
+      queryclient.invalidateQueries({
+        queryKey: ["view-comments", comment.postId, comment.startlineno],
+      });
+    }
+  }, []);
 
   return (
     <div className={cn(inter.className, "flex flex-col")}>
@@ -202,7 +229,7 @@ const CommentItem = ({
                   <button
                     onClick={() => {
                       setMenuOpen(false);
-                      // onDelete(comment.id);
+                      handleDelete(comment.id);
                     }}
                     className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer"
                   >

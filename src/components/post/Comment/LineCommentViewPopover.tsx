@@ -24,7 +24,6 @@ interface LineCommentViewPopoverProps {
   onClose: () => void;
   // TODO: Check for the Edit and Delete Comment also
   // onEdit: (commentId: string, newContent: string) => void;
-  // onDelete: (commentId: string) => void;
 }
 
 const LineCommentViewPopover = ({
@@ -34,7 +33,6 @@ const LineCommentViewPopover = ({
   loading,
   onClose,
   // onEdit,
-  // onDelete,
 }: LineCommentViewPopoverProps) => {
   return (
     <Popover open onOpenChange={(open) => !open && onClose()}>
@@ -92,7 +90,6 @@ const LineCommentViewPopover = ({
                 isOwner={currentUserId === comment.authorId}
                 currentUserId={currentUserId}
                 // onEdit={onEdit}
-                // onDelete={onDelete}
               />
             ))
           )}
