@@ -5,6 +5,11 @@ export interface CommentCountOnPost {
     startlineno: number
 }
 
+export type CommentUpdatedResponse = {
+    id: string,
+    content: string
+}
+
 export type CommentWithAuthorAndReplyCount = Omit<Prisma.CommentGetPayload<{
     include: {
         author: {

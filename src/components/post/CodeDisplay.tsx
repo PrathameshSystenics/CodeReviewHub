@@ -162,37 +162,6 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
     [closeViewPopover],
   );
 
-  // TODO: Handle the Edit and Delete Comment
-  // // Edit a comment
-  // const onEditComment = useCallback(
-  //   (commentId: string, newContent: string) => {
-  //     editCommentApi(postid, commentId, newContent).then((response) => {
-  //       if (response.status === "error") {
-  //         toast.error(response.message);
-  //       } else {
-  //         toast.success("Comment updated");
-  //         queryClient.invalidateQueries({ queryKey: ["comments", postid] });
-  //       }
-  //     });
-  //   },
-  //   [postid, queryClient],
-  // );
-
-  // // Delete a comment
-  // const onDeleteComment = useCallback(
-  //   (commentId: string) => {
-  //     deleteCommentApi(postid, commentId).then((response) => {
-  //       if (response.status === "error") {
-  //         toast.error(response.message);
-  //       } else {
-  //         toast.success("Comment deleted");
-  //         queryClient.invalidateQueries({ queryKey: ["comments", postid] });
-  //       }
-  //     });
-  //   },
-  //   [postid, queryClient],
-  // );
-
   const isSelected = (line: number) => {
     if (selectedStart === null || selectedEnd === null) return false;
     return line >= selectedStart && line <= selectedEnd;

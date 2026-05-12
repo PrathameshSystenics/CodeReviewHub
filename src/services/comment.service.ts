@@ -1,8 +1,9 @@
 import status from "http-status";
 import { getPostByIdService } from "./postCode.service";
-import { addComment, deleteComment, getComment, getCommentCount, getComments } from "@/db/comment.repo";
+import { addComment, deleteComment, getComment, getCommentCount, getComments, updateComment } from "@/db/comment.repo";
 import { CommentCountOnPost } from "@/types/comment";
 import { Session } from "next-auth";
+import { ReplyCommentInputs } from "@/schemas/comment";
 
 export class PostCommentServiceError extends Error {
     constructor(
@@ -107,6 +108,27 @@ export async function deleteCommentOrReply(commentId: string, user: Session) {
         const deleted = await deleteComment(commentId)
         if (deleted === commentId) return deleted
         throw new PostCommentServiceError("Failed to Delete the Comment", status.INTERNAL_SERVER_ERROR)
+    } catch (error) {
+        console.error(error)
+        throw error
+    }
+}
+
+export async function updateCommentOrReplyContent(commentId: string, replyschema: ReplyCommentInputs, user: Session) {
+    try {
+        const comment = await getComment(commentId)
+
+        if (!comment) {
+            throw new PostCommentServiceError("Comment Not Found", status.NOT_FOUND)
+        }
+
+        if (comment.authorId !== user.user.id) {
+            throw new PostCommentServiceError("You cannot update other user comment", status.BAD_REQUEST)
+        }
+
+        const updatedComment = await updateComment(commentId, replyschema.content)
+        return updatedComment;
+
     } catch (error) {
         console.error(error)
         throw error

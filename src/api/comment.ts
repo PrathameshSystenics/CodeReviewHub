@@ -1,6 +1,6 @@
 import { CommentInputs, ReplyCommentInputs } from "@/schemas/comment";
 import { APIResponse } from "@/types";
-import { CommentCountOnPost, CommentWithAuthorAndReplyCount } from "@/types/comment";
+import { CommentCountOnPost, CommentUpdatedResponse, CommentWithAuthorAndReplyCount } from "@/types/comment";
 
 export async function addCommentOnPostApi(postid: string, commentbody: CommentInputs): Promise<APIResponse<string>> {
     const response = await fetch(`/api/code-post/${postid}/comment`, {
@@ -44,5 +44,14 @@ export async function deleteCommentReplyApi(commentId: string, postId: string): 
     const response = await fetch(`/api/code-post/${postId}/comment/${commentId}`, {
         method: "DELETE"
     })
+    return response.json()
+}
+
+export async function updateCommentReplyApi(commentId: string, postId: string, updatebody: ReplyCommentInputs): Promise<APIResponse<CommentUpdatedResponse | null>> {
+    const response = await fetch(`/api/code-post/${postId}/comment/${commentId}`, {
+        body: JSON.stringify(updatebody),
+        method: "PATCH"
+    })
+
     return response.json()
 }

@@ -111,3 +111,17 @@ export async function deleteComment(commentId: string) {
     })
     return deleted.id
 }
+
+export async function updateComment(commentId: string, content: string) {
+    const comment = await prisma.comment.update({
+        where: {
+            id: commentId
+        }, data: {
+            content: content
+        }, select: {
+            id: true,
+            content: true
+        }
+    })
+    return comment;
+}

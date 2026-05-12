@@ -4,6 +4,7 @@ import {
   deleteCommentReplyApi,
   getRepliesOnCommentApi,
   replyOnCommentApi,
+  updateCommentReplyApi,
 } from "@/api/comment";
 import UserProfileImage from "@/components/auth/UserProfileImage";
 import { cn } from "@/lib/utils";
@@ -11,6 +12,7 @@ import { CommentWithAuthorAndReplyCount } from "@/types/comment";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import {
+  memo,
   useCallback,
   useEffect,
   useEffectEvent,
@@ -20,8 +22,8 @@ import {
 import { BsThreeDots } from "react-icons/bs";
 import { FaAngleDown, FaAngleUp } from "react-icons/fa";
 import { VscEdit, VscLoading, VscSend, VscTrash } from "react-icons/vsc";
-import TimeAgoComponent from "../TimeAgoComponent";
 import { toast } from "react-toastify";
+import TimeAgoComponent from "../TimeAgoComponent";
 
 //#region Font Declaration
 const inter = Inter({ subsets: ["latin"] });
@@ -33,8 +35,6 @@ interface CommentItemProps {
   isOwner: boolean;
   currentUserId: string | undefined;
   depth?: number;
-  // TODO: Handle Edit and Delete Comment
-  // onEdit: (commentId: string, newContent: string) => void;
 }
 
 const CommentItem = ({
@@ -42,7 +42,6 @@ const CommentItem = ({
   isOwner,
   currentUserId,
   depth = 0,
-  // onEdit,
 }: CommentItemProps) => {
   //#region State Hooks
   const [menuOpen, setMenuOpen] = useState(false);
@@ -100,10 +99,27 @@ const CommentItem = ({
         ? `L${comment.startlineno}`
         : null;
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editContent.trim()) return;
-    // onEdit(comment.id, editContent.trim());
-    setEditing(false);
+    const updatedComment = await updateCommentReplyApi(
+      comment.id,
+      comment.postId,
+      {
+        content: editContent.trim(),
+      },
+    );
+    if (updatedComment.status === "success") {
+      toast.info("Updated the Comment/Reply");
+      queryclient.invalidateQueries({
+        queryKey: ["replies", comment.postId, comment.id],
+      });
+      queryclient.invalidateQueries({
+        queryKey: ["view-comments", comment.postId, comment.startlineno],
+      });
+      setEditing(false);
+    } else {
+      toast.error("Failed to Edit the Comment");
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -387,4 +403,4 @@ const CommentItem = ({
   );
 };
 
-export default CommentItem;
+export default memo(CommentItem);
