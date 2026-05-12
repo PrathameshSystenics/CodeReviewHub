@@ -161,6 +161,9 @@ const CommentItem = ({
       queryclient.invalidateQueries({
         queryKey: ["view-comments", comment.postId, comment.startlineno],
       });
+      queryclient.invalidateQueries({
+        queryKey: ["comments", comment.postId],
+      });
     }
   }, []);
 
