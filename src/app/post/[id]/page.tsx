@@ -2,8 +2,8 @@
 
 import { getOptionalServerSession } from "@/auth";
 import UserProfileImage from "@/components/auth/UserProfileImage";
-import CodeDisplay from "@/components/post/CodeDisplay";
 import PostStatusBadge from "@/components/post/PostStatusBadge";
+import ReviewEditor from "@/components/post/Review/ReviewEditor";
 import TagDisplay from "@/components/post/TagDisplay";
 import TimeAgoComponent from "@/components/post/TimeAgoComponent";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ import { PostWithRelations } from "@/types/postCode";
 import { CodeStatus } from "@generated/prisma/enums";
 import status from "http-status";
 import { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { Inter, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -34,6 +35,10 @@ const inter = Inter({
 export async function generateMetadata(): Promise<Metadata> {
   return {};
 }
+
+//#region Dynamic Imports
+const CodeDisplay = dynamic(() => import("@/components/post/CodeDisplay"));
+//#endregion
 
 export default async function PostPage({ params }: PageProps<"/post/[id]">) {
   const { id } = await params;
@@ -70,7 +75,7 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
         className={`w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6`}
       >
         {/* Post Title and Description */}
-        <div className="flex flex-row items-center justify-between">
+        <div className="flex flex-row items-center flex-wrap gap-3 justify-between">
           <div>
             <h1
               className={`${space_grotesk.className} md:text-4xl text-3xl font-semibold text-slate-200`}
@@ -110,9 +115,9 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
               >
                 <TimeAgoComponent date={post?.createdAt ?? new Date()} />
               </span>
-              <span></span>
             </div>
           </div>
+          {/* Edit Link */}
           {owner && (
             <div className={cn(inter.className, "text-sm bg-")}>
               <Link
@@ -137,6 +142,9 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
             postid={post.id}
           />
         )}
+
+        {/* Reviews - Editor */}
+        <div>{!owner && <ReviewEditor />}</div>
       </article>
     </div>
   );

@@ -206,7 +206,7 @@ const CommentItem = ({
               <span
                 className={cn(inter.className, "text-[0.7em] text-slate-300")}
               >
-                {comment.author.name}
+                {isOwner ? "You" : comment.author.name}
               </span>
             </div>
             {lineLabel && (
