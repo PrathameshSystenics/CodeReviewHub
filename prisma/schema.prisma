@@ -95,7 +95,6 @@ model Post {
 model Review {
   id         String  @id @default(cuid())
   content    String
-  rating     Int
   isAccepted Boolean @default(false)
 
   postId     String
