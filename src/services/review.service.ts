@@ -1,4 +1,4 @@
-import { addReview } from "@/db/review.repo";
+import { addReview, getReviewByUserId } from "@/db/review.repo";
 import { ReviewInput } from "@/schemas/review";
 import status from "http-status";
 import { Session } from "next-auth";
@@ -34,6 +34,16 @@ export async function addReviewForPost(postId: string, user: Session, reviewSche
 
         const review = await addReview(user.user.id, reviewSchema.content, postId)
         return review
+    } catch (error) {
+        console.error(error)
+        throw error;
+    }
+}
+
+export async function getReviewByUserIdForPost(postId: string, user: Session) {
+    try {
+        const userReview = await getReviewByUserId(user.user.id, postId)
+        return userReview;
     } catch (error) {
         console.error(error)
         throw error;

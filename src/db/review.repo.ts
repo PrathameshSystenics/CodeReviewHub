@@ -12,3 +12,14 @@ export async function addReview(userId: string, content: string, postId: string)
 
     return newReview;
 }
+
+export async function getReviewByUserId(userId: string, postId: string) {
+    const userReview = await prisma.review.findFirst({
+        where: {
+            postId: postId,
+            reviewerId: userId
+
+        }
+    })
+    return userReview
+}

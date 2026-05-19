@@ -3,7 +3,6 @@
 import { getOptionalServerSession } from "@/auth";
 import UserProfileImage from "@/components/auth/UserProfileImage";
 import PostStatusBadge from "@/components/post/PostStatusBadge";
-import ReviewEditor from "@/components/post/Review/ReviewEditor";
 import TagDisplay from "@/components/post/TagDisplay";
 import TimeAgoComponent from "@/components/post/TimeAgoComponent";
 import { cn } from "@/lib/utils";
@@ -11,6 +10,7 @@ import {
   getPostByIdService,
   PostCodeServiceError,
 } from "@/services/postCode.service";
+import { getReviewByUserIdForPost } from "@/services/review.service";
 import { PostWithRelations } from "@/types/postCode";
 import { CodeStatus } from "@generated/prisma/enums";
 import status from "http-status";
@@ -38,6 +38,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 //#region Dynamic Imports
 const CodeDisplay = dynamic(() => import("@/components/post/CodeDisplay"));
+const ReviewEditor = dynamic(
+  () => import("@/components/post/Review/ReviewEditor"),
+);
 //#endregion
 
 export default async function PostPage({ params }: PageProps<"/post/[id]">) {
@@ -51,6 +54,10 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
       IncludeTags: true,
     });
 
+    if (!post) {
+      notFound();
+    }
+
     // Check if the LoggedIn user is owner or not.
     const user = await getOptionalServerSession();
     if (user?.user.id === post.author.id) {
@@ -59,6 +66,13 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
 
     // Post in Draft Mode then Not Found
     if (!post.published) notFound();
+
+    // Fetch the Review for the LoggedInUser
+    const reviewUser = await getReviewByUserIdForPost(id, user!);
+
+    if (reviewUser) {
+      owner = true;
+    }
   } catch (error) {
     if (error instanceof PostCodeServiceError) {
       if (error.statusCode === status.NOT_FOUND) {
