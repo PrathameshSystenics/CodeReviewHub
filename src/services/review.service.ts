@@ -17,6 +17,7 @@ export class ReviewServiceError extends Error {
 
 export async function addReviewForPost(postId: string, user: Session, reviewSchema: ReviewInput) {
     try {
+        // TODO: handle the case where user canot add more than one review
         const post = await getPostByIdService(postId, {})
 
         if (!post) {

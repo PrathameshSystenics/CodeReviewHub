@@ -144,7 +144,7 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
         )}
 
         {/* Reviews - Editor */}
-        <div>{!owner && <ReviewEditor />}</div>
+        <div>{!owner && <ReviewEditor postId={post?.id!} />}</div>
       </article>
     </div>
   );

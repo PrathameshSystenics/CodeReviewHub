@@ -1,5 +1,6 @@
 "use client";
 
+import { addReviewForPostApi } from "@/api/review";
 import { Button } from "@/components/UI/button";
 import { Spinner } from "@/components/UI/spinner";
 import { cn } from "@/lib/utils";
@@ -30,8 +31,9 @@ import {
 import "@uiw/react-md-editor/markdown-editor.css";
 import dynamic from "next/dynamic";
 import { Inter, Space_Grotesk } from "next/font/google";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useCallback, useState } from "react";
 import { FaMarkdown, FaRegEdit } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 //#region Font Declaration
 const inter = Inter({ subsets: ["latin"] });
@@ -45,18 +47,39 @@ const MDEditor = dynamic(() => import("@uiw/react-md-editor"), {
 });
 //#endregion
 
-const ReviewEditor = () => {
+interface ReviewEditorProps {
+  postId: string;
+}
+
+const ReviewEditor = ({ postId }: ReviewEditorProps) => {
   //#region React State Hooks
   const [value, setValue] = useState<string>("");
   const [mode, setMode] = useState<PreviewType>("edit");
+  const [posting, setPosting] = useState<boolean>(false);
   //#endregion
 
   const handleValueChange = (
-    value: string | undefined,
-    event: ChangeEvent<HTMLTextAreaElement, Element> | undefined,
+    value: string | undefined
   ) => {
     setValue(value ?? "");
   };
+
+  const handlePostReviewClick = useCallback(async () => {
+    console.log(value)
+    setPosting(true);
+    const response = await addReviewForPostApi(postId, {
+      content: value,
+    });
+    if (response.status === "success") {
+      setPosting(false);
+      toast.success("Review Added for the Post");
+      setValue("");
+      // TODO: Update the Query Client to get the Review List
+    } else {
+      toast.error(response.message);
+      setPosting(false);
+    }
+  }, [value, postId]);
 
   return (
     <div>
@@ -103,6 +126,7 @@ const ReviewEditor = () => {
         <MDEditor
           value={value}
           preview={mode}
+          aria-disabled={posting}
           hideToolbar={mode === "preview"}
           visibleDragbar={false}
           onChange={handleValueChange}
@@ -150,8 +174,10 @@ const ReviewEditor = () => {
                 space_grotesk.className,
                 "text-sm py-4 cursor-pointer px-3 rounded-sm",
               )}
+              onClick={handlePostReviewClick}
+              disabled={posting}
             >
-              Post Review
+              {posting ? <Spinner /> : <span>Post Review</span>}
             </Button>
           </div>
         </div>
