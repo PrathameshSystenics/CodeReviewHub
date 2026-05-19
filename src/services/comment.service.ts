@@ -25,7 +25,7 @@ export async function addCommentOnPost(postId: string, userId: string, content: 
         }
 
         // Disallow on adding the comment on accepted or closed post.
-        if (post.status === "ACCEPTED" || post.status === "CLOSED") {
+        if (post.status === "ACCEPTED" || post.status === "CLOSED" || !post.published) {
             throw new PostCommentServiceError("Cannot comment on Closed/Accepted Post", status.BAD_REQUEST)
         }
 
