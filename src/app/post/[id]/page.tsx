@@ -3,6 +3,7 @@
 import { getOptionalServerSession } from "@/auth";
 import UserProfileImage from "@/components/auth/UserProfileImage";
 import PostStatusBadge from "@/components/post/PostStatusBadge";
+import Reviews from "@/components/post/Review/Reviews";
 import TagDisplay from "@/components/post/TagDisplay";
 import TimeAgoComponent from "@/components/post/TimeAgoComponent";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,8 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
   const { id } = await params;
   let post: PostWithRelations | null = null;
   let owner: boolean = false;
+  let reviewPosted: boolean = false;
+  let currentUserId: string | undefined = undefined;
   try {
     // Fetch the Post
     post = await getPostByIdService(id, {
@@ -60,6 +63,7 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
 
     // Check if the LoggedIn user is owner or not.
     const user = await getOptionalServerSession();
+    currentUserId = user?.user.id;
     if (user?.user.id === post.author.id) {
       owner = true;
     }
@@ -71,7 +75,7 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
     const reviewUser = await getReviewByUserIdForPost(id, user!);
 
     if (reviewUser) {
-      owner = true;
+      reviewPosted = true;
     }
   } catch (error) {
     if (error instanceof PostCodeServiceError) {
@@ -158,7 +162,10 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
         )}
 
         {/* Reviews - Editor */}
-        <div>{!owner && <ReviewEditor postId={post?.id!} />}</div>
+        <div>{!reviewPosted && <ReviewEditor postId={post?.id!} />}</div>
+
+        {/* Reviews */}
+        <Reviews postId={post?.id!} currentUserId={currentUserId} postOwnerId={post?.authorId!} />
       </article>
     </div>
   );

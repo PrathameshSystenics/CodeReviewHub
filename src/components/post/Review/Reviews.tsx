@@ -1,0 +1,112 @@
+"use client";
+
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { Inter, Space_Grotesk } from "next/font/google";
+import { VscCommentDiscussion } from "react-icons/vsc";
+import SortReviewSelect from "./SortReviewSelect";
+import { SortReview } from "@/types/review";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { getReviewsForPostApi } from "@/api/review";
+import { Spinner } from "@/components/UI/spinner";
+import ReviewItemComponent from "./ReviewItem";
+
+interface ReviewsProps {
+  postId: string;
+  currentUserId: string | undefined;
+  postOwnerId: string;
+}
+
+//#region Font Declaration
+const inter = Inter({ subsets: ["latin"] });
+const space_grotesk = Space_Grotesk({ subsets: ["latin"] });
+//#endregion
+
+const Reviews = ({ postId, currentUserId, postOwnerId }: ReviewsProps) => {
+  //#region Use State Hooks
+  const [sortBy, setSortBy] = useState<SortReview>("newest");
+  //#endregion
+
+  //#region React Query Hooks
+  const { data, isLoading, error, isError, hasNextPage, isFetching } =
+    useInfiniteQuery({
+      queryKey: ["reviews", postId],
+      queryFn: ({ pageParam }) => {
+        return getReviewsForPostApi(postId, pageParam, 6, sortBy);
+      },
+      select: (data) => data.pages,
+      initialPageParam: 1,
+      getNextPageParam: (lastpage) =>
+        lastpage.data?.hasNextPage ? lastpage.data.currentPage + 1 : undefined,
+    });
+  //#endregion
+
+  return (
+    <div className="mt-5">
+      {/* Reviews Header */}
+      <div className="flex flex-row justify-between flex-wrap">
+        <div className="flex flex-row gap-2 items-center">
+          <VscCommentDiscussion size={20} className="text-primary-dark" />
+          <span
+            className={cn(
+              space_grotesk.className,
+              "text-sm text-slate-200 font-semibold",
+            )}
+          >
+            Reviews
+          </span>
+          <span
+            className={cn(
+              inter.className,
+              "text-xs text-slate-200 bg-gray-800 rounded-full p-1",
+            )}
+          >
+            {data ? data[0].data?.totalCount : 0}
+          </span>
+        </div>
+        <SortReviewSelect value={sortBy} onValueChange={setSortBy} />
+      </div>
+      {/* Review Items */}
+      <div className="mt-4 flex flex-col gap-3">
+        {isLoading && isFetching && (
+          <div className="flex flex-row justify-center items-center gap-1">
+            <Spinner className="text-slate-300 size-5" />
+            <span className={cn(inter.className, "text-slate-300 text-sm")}>
+              Fetching Reviews
+            </span>
+          </div>
+        )}
+
+        {!isLoading && !isFetching && isError && (
+          <div className="text-center w-full">
+            <span
+              className={cn(
+                inter.className,
+                "text-sm text-red-500 text-center w-full",
+              )}
+            >
+              Error occured when fetching the reviews. Please try again later
+            </span>
+          </div>
+        )}
+
+        {!isLoading && !isFetching && !isError && (
+          <>
+            {data?.map((value, pageIndex) => {
+              return value.data?.reviews.map((review) => (
+                <ReviewItemComponent
+                  key={review.id}
+                  review={review}
+                  currentUserId={currentUserId}
+                  postOwnerId={postOwnerId}
+                />
+              ));
+            })}
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Reviews;

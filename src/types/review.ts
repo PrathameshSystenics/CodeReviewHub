@@ -28,3 +28,5 @@ export interface PaginatedReviewsResponse {
     totalPages: number;
     hasNextPage: boolean;
 }
+
+export type SortReview = "newest" | "oldest"

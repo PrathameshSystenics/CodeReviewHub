@@ -10,6 +10,7 @@ export const authOptions: AuthOptions = {
   secret: process.env.BETTER_AUTH_SECRET,
   session: {
     strategy: "jwt",
+    maxAge: 36000,
   },
   cookies: {
     sessionToken: {

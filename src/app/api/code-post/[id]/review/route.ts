@@ -2,7 +2,7 @@ import { getOptionalServerSession } from "@/auth";
 import { reviewSchema } from "@/schemas";
 import { addReviewForPost, getReviewsForPost, ReviewServiceError } from "@/services/review.service";
 import { APIResponse } from "@/types";
-import { PaginatedReviewsResponse } from "@/types/review";
+import { PaginatedReviewsResponse, SortReview } from "@/types/review";
 import { Review } from "@generated/prisma/client";
 import status from "http-status";
 import { NextRequest, NextResponse } from "next/server";
@@ -61,12 +61,14 @@ export async function GET(request: NextRequest, ctx: RouteContext<'/api/code-pos
 
         const page = Number(params.get("page"))
         const pagesize = Number(params.get("pagesize"))
-        const sort = params.get("sort") as "asc" | "desc"
+        const sort = params.get("sort") as SortReview
 
         if ((!page || !pagesize || !sort) || (isNaN(page) || isNaN((pagesize)))) {
             return NextResponse.json<APIResponse>({
                 message: "Page or Pagesize and sort is required",
                 status: "invalid"
+            }, {
+                status: status.NOT_ACCEPTABLE
             })
         }
 
@@ -75,6 +77,8 @@ export async function GET(request: NextRequest, ctx: RouteContext<'/api/code-pos
             message: "Fetched the Reviews Successfully",
             status: "success",
             data: response
+        }, {
+            status: status.OK
         })
     } catch (error) {
         if (error instanceof ReviewServiceError) {

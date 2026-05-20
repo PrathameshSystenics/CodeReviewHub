@@ -31,7 +31,7 @@ import {
 import "@uiw/react-md-editor/markdown-editor.css";
 import dynamic from "next/dynamic";
 import { Inter, Space_Grotesk } from "next/font/google";
-import { ChangeEvent, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { FaMarkdown, FaRegEdit } from "react-icons/fa";
 import { toast } from "react-toastify";
 
@@ -58,14 +58,12 @@ const ReviewEditor = ({ postId }: ReviewEditorProps) => {
   const [posting, setPosting] = useState<boolean>(false);
   //#endregion
 
-  const handleValueChange = (
-    value: string | undefined
-  ) => {
+  const handleValueChange = (value: string | undefined) => {
     setValue(value ?? "");
   };
 
   const handlePostReviewClick = useCallback(async () => {
-    console.log(value)
+    console.log(value);
     setPosting(true);
     const response = await addReviewForPostApi(postId, {
       content: value,

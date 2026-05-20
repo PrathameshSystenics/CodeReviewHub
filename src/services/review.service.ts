@@ -1,6 +1,6 @@
-import { addReview, getReviewByUserId, getReviews } from "@/db/review.repo";
+import { acceptReviewById, addReview, deleteReviewById, getReviewById, getReviewByUserId, getReviews, updateReviewContent } from "@/db/review.repo";
 import { ReviewInput } from "@/schemas/review";
-import { PaginatedReviewsResponse, ReviewItem } from "@/types/review";
+import { PaginatedReviewsResponse, ReviewItem, SortReview } from "@/types/review";
 import status from "http-status";
 import { Session } from "next-auth";
 import { getPostByIdService } from "./postCode.service";
@@ -19,7 +19,6 @@ export class ReviewServiceError extends Error {
 
 export async function addReviewForPost(postId: string, user: Session, reviewSchema: ReviewInput) {
     try {
-        // TODO: handle the case where user canot add more than one review
         const post = await getPostByIdService(postId, {})
 
         if (!post) {
@@ -32,6 +31,13 @@ export async function addReviewForPost(postId: string, user: Session, reviewSche
 
         if (post.status === "ACCEPTED" || post.status === "CLOSED" || !post.published) {
             throw new ReviewServiceError("Cannot Review the post when it is Accepted,Closed or Not Published", status.NOT_ACCEPTABLE)
+        }
+
+        // Check if the user have posted the review for these post.
+        const existingreview = await getReviewByUserId(user.user.id, post.id)
+
+        if (existingreview) {
+            throw new ReviewServiceError("You cannot add another Review to the post", status.NOT_ACCEPTABLE)
         }
 
         if (!reviewSchema.content.trim()) {
@@ -60,7 +66,7 @@ export async function getReviewsForPost(
     postId: string,
     page: number,
     pageSize: number,
-    sort: "asc" | "desc" = "desc"
+    sort: SortReview = "newest"
 ): Promise<PaginatedReviewsResponse> {
     try {
         const post = await getPostById(postId)
@@ -92,6 +98,87 @@ export async function getReviewsForPost(
         };
     } catch (error) {
         console.error(error);
+        throw error;
+    }
+}
+
+export async function deleteReviewForPost(reviewId: string, user: Session) {
+    try {
+        const review = await getReviewById(reviewId)
+
+        if (!review) {
+            throw new ReviewServiceError("Review not Found", status.NOT_FOUND)
+        }
+
+        // Only the reviewer can delete their own review
+        if (review.reviewerId !== user.user.id) {
+            throw new ReviewServiceError("You are not authorized to delete this review", status.FORBIDDEN)
+        }
+
+        const deletedReview = await deleteReviewById(reviewId)
+        return deletedReview
+    } catch (error) {
+        console.error(error)
+        throw error;
+    }
+}
+
+export async function updateReviewForPost(reviewId: string, content: string, user: Session) {
+    try {
+        const review = await getReviewById(reviewId)
+
+        if (!review) {
+            throw new ReviewServiceError("Review not Found", status.NOT_FOUND)
+        }
+
+        // Only the reviewer can update their own review
+        if (review.reviewerId !== user.user.id) {
+            throw new ReviewServiceError("You are not authorized to update this review", status.FORBIDDEN)
+        }
+
+        if (!content.trim()) {
+            throw new ReviewServiceError("Review content cannot be empty", status.BAD_REQUEST)
+        }
+
+        const updatedReview = await updateReviewContent(reviewId, content.trim())
+        return updatedReview
+    } catch (error) {
+        console.error(error)
+        throw error;
+    }
+}
+
+export async function acceptReviewForPost(reviewId: string, user: Session) {
+    try {
+        const review = await getReviewById(reviewId)
+
+        if (!review) {
+            throw new ReviewServiceError("Review not Found", status.NOT_FOUND)
+        }
+
+        // Only the post owner can accept a review
+        const post = await getPostById(review.postId)
+
+        if (!post) {
+            throw new ReviewServiceError("Post not Found", status.NOT_FOUND)
+        }
+
+        if (post.authorId !== user.user.id) {
+            throw new ReviewServiceError("Only the post owner can accept a review", status.FORBIDDEN)
+        }
+
+        if (post.status === "ACCEPTED") {
+            throw new ReviewServiceError("Post already has an accepted review", status.NOT_ACCEPTABLE)
+        }
+
+        if (review.isAccepted) {
+            throw new ReviewServiceError("This review is already accepted", status.NOT_ACCEPTABLE)
+        }
+
+        const acceptedReview = await acceptReviewById(reviewId)
+        return acceptedReview
+    } catch (error) {
+        console.error(error)
         throw error;
     }
 }
