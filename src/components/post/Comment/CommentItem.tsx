@@ -35,6 +35,9 @@ interface CommentItemProps {
   isOwner: boolean;
   currentUserId: string | undefined;
   depth?: number;
+  onDelete: (commentId: string) => Promise<void>;
+  onUpdate: (commentId: string, content: string) => Promise<void>;
+  onSubmitReply: (commentId: string, content: string) => Promise<void>;
 }
 
 const CommentItem = ({
@@ -42,6 +45,9 @@ const CommentItem = ({
   isOwner,
   currentUserId,
   depth = 0,
+  onDelete,
+  onUpdate,
+  onSubmitReply,
 }: CommentItemProps) => {
   //#region State Hooks
   const [menuOpen, setMenuOpen] = useState(false);
@@ -99,27 +105,11 @@ const CommentItem = ({
         ? `L${comment.startlineno}`
         : null;
 
+  //#region Own CRUD — fully delegated to props, no API calls here
   const handleSaveEdit = async () => {
     if (!editContent.trim()) return;
-    const updatedComment = await updateCommentReplyApi(
-      comment.id,
-      comment.postId,
-      {
-        content: editContent.trim(),
-      },
-    );
-    if (updatedComment.status === "success") {
-      toast.info("Updated the Comment/Reply");
-      queryclient.invalidateQueries({
-        queryKey: ["replies", comment.postId, comment.id],
-      });
-      queryclient.invalidateQueries({
-        queryKey: ["view-comments", comment.postId, comment.startlineno],
-      });
-      setEditing(false);
-    } else {
-      toast.error("Failed to Edit the Comment");
-    }
+    await onUpdate(comment.id, editContent.trim());
+    setEditing(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -135,18 +125,7 @@ const CommentItem = ({
 
   const handleSubmitReply = async () => {
     if (!replyContent.trim()) return;
-
-    const reply = await replyOnCommentApi(comment.postId, comment.id, {
-      content: replyContent,
-    });
-    if (reply.status === "success") {
-      queryclient.invalidateQueries({
-        queryKey: ["replies", comment.postId, comment.id],
-      });
-      queryclient.invalidateQueries({
-        queryKey: ["view-comments", comment.postId, comment.startlineno],
-      });
-    }
+    await onSubmitReply(comment.id, replyContent);
     setReplyContent("");
   };
 
@@ -164,24 +143,72 @@ const CommentItem = ({
     setShowReplies((prev) => !prev);
   };
 
-  const handleDelete = useCallback(async (commentId: string) => {
-    const deletedResponse = await deleteCommentReplyApi(
-      commentId,
-      comment.postId,
-    );
-    if (deletedResponse.status === "success") {
-      toast.info("Deleted the Comment Successfully");
-      queryclient.invalidateQueries({
-        queryKey: ["replies", comment.postId, comment.id],
+  const handleDelete = useCallback(async () => {
+    await onDelete(comment.id);
+  }, [onDelete, comment.id]);
+  //#endregion
+
+  //#region Nested reply handlers — CommentItem acts as parent for its own children
+  const handleDeleteNestedReply = useCallback(
+    async (replyId: string) => {
+      const response = await deleteCommentReplyApi(replyId, comment.postId);
+      if (response.status === "success") {
+        toast.info("Deleted the Comment Successfully");
+        queryclient.invalidateQueries({
+          queryKey: ["replies", comment.postId, comment.id],
+        });
+        queryclient.invalidateQueries({
+          queryKey: ["view-comments", comment.postId, comment.startlineno],
+        });
+        queryclient.invalidateQueries({
+          queryKey: ["comments", comment.postId],
+        });
+      } else {
+        toast.error(response.message || "Failed to delete the reply");
+      }
+    },
+    [comment.postId, comment.id, comment.startlineno, queryclient],
+  );
+
+  const handleUpdateNestedReply = useCallback(
+    async (replyId: string, content: string) => {
+      const response = await updateCommentReplyApi(replyId, comment.postId, {
+        content,
       });
-      queryclient.invalidateQueries({
-        queryKey: ["view-comments", comment.postId, comment.startlineno],
+      if (response.status === "success") {
+        toast.info("Updated the Comment/Reply");
+        queryclient.invalidateQueries({
+          queryKey: ["replies", comment.postId, comment.id],
+        });
+        queryclient.invalidateQueries({
+          queryKey: ["view-comments", comment.postId, comment.startlineno],
+        });
+      } else {
+        toast.error("Failed to Edit the Comment");
+      }
+    },
+    [comment.postId, comment.id, comment.startlineno, queryclient],
+  );
+
+  const handleSubmitNestedReply = useCallback(
+    async (replyCommentId: string, content: string) => {
+      const response = await replyOnCommentApi(comment.postId, replyCommentId, {
+        content,
       });
-      queryclient.invalidateQueries({
-        queryKey: ["comments", comment.postId],
-      });
-    }
-  }, []);
+      if (response.status === "success") {
+        queryclient.invalidateQueries({
+          queryKey: ["replies", comment.postId, replyCommentId],
+        });
+        queryclient.invalidateQueries({
+          queryKey: ["view-comments", comment.postId, comment.startlineno],
+        });
+      } else {
+        toast.error(response.message || "Failed to add reply");
+      }
+    },
+    [comment.postId, comment.startlineno, queryclient],
+  );
+  //#endregion
 
   return (
     <div className={cn(inter.className, "flex flex-col")}>
@@ -248,7 +275,7 @@ const CommentItem = ({
                   <button
                     onClick={() => {
                       setMenuOpen(false);
-                      handleDelete(comment.id);
+                      handleDelete();
                     }}
                     className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer"
                   >
@@ -393,6 +420,9 @@ const CommentItem = ({
                   isOwner={currentUserId === reply.authorId}
                   currentUserId={currentUserId}
                   depth={depth + 1}
+                  onDelete={handleDeleteNestedReply}
+                  onUpdate={handleUpdateNestedReply}
+                  onSubmitReply={handleSubmitNestedReply}
                 />
               ))
             )}

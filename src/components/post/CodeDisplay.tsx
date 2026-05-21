@@ -251,6 +251,7 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
                   {viewingCommentsLine !== null &&
                     viewingCommentsLine === lineNum && (
                       <LineCommentViewPopover
+                        postId={postid}
                         lineNumber={lineNum}
                         comments={viewingComments}
                         currentUserId={currentUserId}

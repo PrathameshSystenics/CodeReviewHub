@@ -1,7 +1,8 @@
 import { prisma } from "@/prisma";
+import { Prisma } from "@generated/prisma/client";
 import { CommentWithAuthorAndReplyCount } from "@/types/comment";
 
-export async function addComment(postid: string, startline: number | null, content: string, userid: string, endline?: number | null, commentId?: string | null) {
+export async function addComment(postid: string, startline: number | null, content: string, userid: string, endline?: number | null, commentId?: string | null, reviewId?: string | null) {
     try {
         const comment = await prisma.comment.create({
             data: {
@@ -10,7 +11,8 @@ export async function addComment(postid: string, startline: number | null, conte
                 postId: postid,
                 startlineno: startline,
                 endlineno: endline,
-                parentId: commentId
+                parentId: commentId,
+                reviewId: reviewId
             }, select: {
                 id: true
             }
@@ -43,40 +45,54 @@ export async function getComment(commentId: string) {
     }
 }
 
-export async function getComments(postid: string, startlineno: number | null, parentcommentId?: string): Promise<CommentWithAuthorAndReplyCount[]> {
+export async function getComments(
+    postid: string,
+    startlineno: number | null,
+    parentcommentId?: string,
+    reviewId?: string
+): Promise<CommentWithAuthorAndReplyCount[]> {
     try {
+        const where: Prisma.CommentWhereInput = {
+            postId: postid,
+            startlineno,
+        };
+
+        if (parentcommentId) {
+            where.parentId = parentcommentId;
+        }
+
+        if (reviewId) {
+            where.reviewId = reviewId;
+            where.parentId = null;
+        }
+
         const comments = await prisma.comment.findMany({
             orderBy: {
-                createdAt: "desc"
+                createdAt: "desc",
             },
-            where: {
-                postId: postid,
-                startlineno: startlineno,
-                ...(parentcommentId !== undefined && {
-                    parentId: parentcommentId,
-                })
-            },
+            where,
             include: {
                 author: {
                     select: {
                         id: true,
                         name: true,
-                        image: true
-                    }
+                        image: true,
+                    },
                 },
                 _count: {
                     select: {
-                        replies: true
-                    }
-                }
-            }
-        })
+                        replies: true,
+                    },
+                },
+            },
+        });
+
         return comments.map(({ _count, ...rest }) => ({
             ...rest,
-            replyCount: _count.replies
-        }))
+            replyCount: _count.replies,
+        }));
     } catch (error) {
-        console.error(error)
+        console.error(error);
         throw error;
     }
 }

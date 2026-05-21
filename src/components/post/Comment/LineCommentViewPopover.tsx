@@ -1,15 +1,22 @@
 "use client";
 
 import {
+  deleteCommentReplyApi,
+  replyOnCommentApi,
+  updateCommentReplyApi,
+} from "@/api/comment";
+import {
   Popover,
   PopoverAnchor,
   PopoverContent,
 } from "@/components/UI/popover";
 import { CommentWithAuthorAndReplyCount } from "@/types/comment";
+import { useQueryClient } from "@tanstack/react-query";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { useCallback } from "react";
 import { VscClose, VscComment, VscLoading } from "react-icons/vsc";
+import { toast } from "react-toastify";
 import CommentItem from "./CommentItem";
-
 
 //#region Font Declaration
 const inter = Inter({ subsets: ["latin"] });
@@ -17,6 +24,7 @@ const jetbrains_mono = JetBrains_Mono({ subsets: ["latin"], weight: "400" });
 //#endregion
 
 interface LineCommentViewPopoverProps {
+  postId: string;
   lineNumber: number;
   comments: CommentWithAuthorAndReplyCount[];
   currentUserId: string | undefined;
@@ -25,13 +33,69 @@ interface LineCommentViewPopoverProps {
 }
 
 const LineCommentViewPopover = ({
+  postId,
   lineNumber,
   comments,
   currentUserId,
   loading,
   onClose,
-  // onEdit,
 }: LineCommentViewPopoverProps) => {
+  const queryclient = useQueryClient();
+
+  //#region Handlers passed down to CommentItem
+  const handleDelete = useCallback(
+    async (commentId: string) => {
+      const response = await deleteCommentReplyApi(commentId, postId);
+      if (response.status === "success") {
+        toast.info("Deleted the Comment Successfully");
+        queryclient.invalidateQueries({
+          queryKey: ["view-comments", postId, lineNumber],
+        });
+        queryclient.invalidateQueries({
+          queryKey: ["comments", postId],
+        });
+      } else {
+        toast.error(response.message || "Failed to delete the comment");
+      }
+    },
+    [postId, lineNumber, queryclient],
+  );
+
+  const handleUpdate = useCallback(
+    async (commentId: string, content: string) => {
+      const response = await updateCommentReplyApi(commentId, postId, {
+        content,
+      });
+      if (response.status === "success") {
+        toast.info("Updated the Comment");
+        queryclient.invalidateQueries({
+          queryKey: ["view-comments", postId, lineNumber],
+        });
+      } else {
+        toast.error(response.message || "Failed to update the comment");
+      }
+    },
+    [postId, lineNumber, queryclient],
+  );
+
+  const handleSubmitReply = useCallback(
+    async (commentId: string, content: string) => {
+      const response = await replyOnCommentApi(postId, commentId, { content });
+      if (response.status === "success") {
+        queryclient.invalidateQueries({
+          queryKey: ["replies", postId, commentId],
+        });
+        queryclient.invalidateQueries({
+          queryKey: ["view-comments", postId, lineNumber],
+        });
+      } else {
+        toast.error(response.message || "Failed to add reply");
+      }
+    },
+    [postId, lineNumber, queryclient],
+  );
+  //#endregion
+
   return (
     <Popover open onOpenChange={(open) => !open && onClose()}>
       <PopoverAnchor asChild>
@@ -87,6 +151,9 @@ const LineCommentViewPopover = ({
                 comment={comment}
                 isOwner={currentUserId === comment.authorId}
                 currentUserId={currentUserId}
+                onDelete={handleDelete}
+                onUpdate={handleUpdate}
+                onSubmitReply={handleSubmitReply}
               />
             ))
           )}

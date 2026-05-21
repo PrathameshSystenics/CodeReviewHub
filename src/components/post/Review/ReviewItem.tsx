@@ -1,35 +1,44 @@
 "use client";
 
 import {
-    acceptReviewApi,
-    deleteReviewApi,
-    updateReviewApi,
+  acceptReviewApi,
+  deleteReviewApi,
+  updateReviewApi,
 } from "@/api/review";
+import {
+  addCommentOnReviewApi,
+  deleteReviewCommentApi,
+  getCommentsOnReviewApi,
+  replyOnReviewCommentApi,
+  updateReviewCommentApi,
+} from "@/api/reviewComment";
 import UserProfileImage from "@/components/auth/UserProfileImage";
+import CommentItem from "@/components/post/Comment/CommentItem";
 import { Spinner } from "@/components/UI/spinner";
 import { cn } from "@/lib/utils";
 import { type ReviewItem } from "@/types/review";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import "@uiw/react-markdown-preview/markdown.css";
 import dynamic from "next/dynamic";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import {
-    memo,
-    useCallback,
-    useEffect,
-    useEffectEvent,
-    useRef,
-    useState,
+  memo,
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
 } from "react";
 import { BsThreeDots } from "react-icons/bs";
-import { FaCheck } from "react-icons/fa";
-import { VscEdit, VscTrash } from "react-icons/vsc";
+import { FaAngleDown, FaAngleUp, FaCheck } from "react-icons/fa";
+import { VscEdit, VscLoading, VscSend, VscTrash } from "react-icons/vsc";
 import { toast } from "react-toastify";
 import TimeAgoComponent from "../TimeAgoComponent";
 
 //#region Font Declaration
 const inter = Inter({ subsets: ["latin"] });
 const space_grotesk = Space_Grotesk({ subsets: ["latin"] });
+const jetbrains_mono = JetBrains_Mono({ subsets: ["latin"], weight: "400" });
 //#endregion
 
 //#region Dynamic Imports
@@ -64,6 +73,9 @@ const ReviewItemComponent = ({
   const [editContent, setEditContent] = useState(review.content);
   const [saving, setSaving] = useState(false);
   const [accepting, setAccepting] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentInput, setCommentInput] = useState("");
+  const [submittingComment, setSubmittingComment] = useState(false);
   //#endregion
 
   const queryclient = useQueryClient();
@@ -71,6 +83,21 @@ const ReviewItemComponent = ({
 
   const isReviewOwner = currentUserId === review.reviewerId;
   const isPostOwner = currentUserId === postOwnerId;
+
+  //#region Review comments query
+  const {
+    data: commentsResponse,
+    isLoading: commentsLoading,
+    isFetching: commentsFetching,
+  } = useQuery({
+    queryKey: ["review-comments", review.postId, review.id],
+    queryFn: () => getCommentsOnReviewApi(review.postId, review.id),
+    enabled: showComments,
+    staleTime: 30 * 1000,
+  });
+
+  const reviewComments = commentsResponse?.data ?? [];
+  //#endregion
 
   const handleMouseDown = useEffectEvent((e: MouseEvent) => {
     if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -87,7 +114,7 @@ const ReviewItemComponent = ({
   }, [menuOpen]);
   //#endregion
 
-  //#region Handlers
+  //#region Review Handlers
   const handleSaveEdit = useCallback(async () => {
     if (!editContent.trim()) return;
     setSaving(true);
@@ -131,6 +158,103 @@ const ReviewItemComponent = ({
     }
     setAccepting(false);
   }, [review.postId, review.id, queryclient]);
+  //#endregion
+
+  //#region Review Comment Handlers
+  const handleSubmitComment = useCallback(async () => {
+    if (!commentInput.trim()) return;
+    setSubmittingComment(true);
+    const response = await addCommentOnReviewApi(review.postId, review.id, {
+      content: commentInput.trim(),
+    });
+    if (response.status === "success") {
+      setCommentInput("");
+      setShowComments(true);
+      queryclient.invalidateQueries({
+        queryKey: ["review-comments", review.postId, review.id],
+      });
+      queryclient.invalidateQueries({
+        queryKey: ["reviews", review.postId],
+      });
+    } else {
+      toast.error(response.message || "Failed to add comment");
+    }
+    setSubmittingComment(false);
+  }, [commentInput, review.postId, review.id, queryclient]);
+
+  const handleCommentKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      handleSubmitComment();
+    }
+    if (e.key === "Escape") {
+      setCommentInput("");
+    }
+  };
+
+  const handleDeleteReviewComment = useCallback(
+    async (commentId: string) => {
+      const response = await deleteReviewCommentApi(
+        review.postId,
+        review.id,
+        commentId,
+      );
+      if (response.status === "success") {
+        toast.info("Deleted the Comment Successfully");
+        queryclient.invalidateQueries({
+          queryKey: ["review-comments", review.postId, review.id],
+        });
+        queryclient.invalidateQueries({
+          queryKey: ["reviews", review.postId],
+        });
+      } else {
+        toast.error(response.message || "Failed to delete the comment");
+      }
+    },
+    [review.postId, review.id, queryclient],
+  );
+
+  const handleUpdateReviewComment = useCallback(
+    async (commentId: string, content: string) => {
+      const response = await updateReviewCommentApi(
+        review.postId,
+        review.id,
+        commentId,
+        { content },
+      );
+      if (response.status === "success") {
+        toast.info("Updated the Comment");
+        queryclient.invalidateQueries({
+          queryKey: ["review-comments", review.postId, review.id],
+        });
+      } else {
+        toast.error(response.message || "Failed to update the comment");
+      }
+    },
+    [review.postId, review.id, queryclient],
+  );
+
+  const handleReplyOnReviewComment = useCallback(
+    async (commentId: string, content: string) => {
+      const response = await replyOnReviewCommentApi(
+        review.postId,
+        review.id,
+        commentId,
+        { content },
+      );
+      if (response.status === "success") {
+        queryclient.invalidateQueries({
+          queryKey: ["replies", review.postId, commentId],
+        });
+        queryclient.invalidateQueries({
+          queryKey: ["review-comments", review.postId, review.id],
+        });
+      } else {
+        toast.error(response.message || "Failed to add reply");
+      }
+    },
+    [review.postId, review.id, queryclient],
+  );
   //#endregion
 
   return (
@@ -296,18 +420,116 @@ const ReviewItemComponent = ({
           </div>
         )}
 
-        {/* Comment count */}
-        {review.commentCount > 0 && (
-          <div className="mt-3 pt-2 border-t border-slate-700/20">
-            <span
-              className={cn(inter.className, "text-[0.65em] text-slate-500")}
+        {/* Comment input — only for non-review-owner users when not editing */}
+        {!isReviewOwner && !editing && currentUserId && (
+          <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-700/20">
+            <input
+              type="text"
+              value={commentInput}
+              onChange={(e) => setCommentInput(e.target.value)}
+              onKeyDown={handleCommentKeyDown}
+              placeholder="Add a comment on this review… (Ctrl+Enter)"
+              className={cn(
+                jetbrains_mono.className,
+                "flex-1 bg-[#0a1220] border border-slate-700/40 rounded-lg px-2.5 py-1.5 text-[0.75em] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all",
+              )}
+            />
+            <button
+              onClick={handleSubmitComment}
+              disabled={!commentInput.trim() || submittingComment}
+              title="Send comment (Ctrl+Enter)"
+              className="shrink-0 p-1.5 rounded-lg bg-primary/90 hover:bg-primary text-slate-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
             >
-              {review.commentCount}{" "}
-              {review.commentCount === 1 ? "comment" : "comments"}
-            </span>
+              {submittingComment ? (
+                <VscLoading className="text-sm animate-spin" />
+              ) : (
+                <VscSend className="text-sm" />
+              )}
+            </button>
           </div>
         )}
+
+        {/* View comments toggle */}
+        {review.commentCount > 0 && (
+          <button
+            onClick={() => setShowComments((prev) => !prev)}
+            className="flex flex-row gap-1 items-center mt-2 cursor-pointer group/comments"
+          >
+            {showComments ? (
+              <FaAngleUp
+                size={13}
+                className="text-primary transition-transform"
+              />
+            ) : (
+              <FaAngleDown
+                size={13}
+                className="text-primary transition-transform group-hover/comments:translate-y-0.5"
+              />
+            )}
+            <span
+              className={cn(
+                inter.className,
+                "text-[0.6em] text-primary group-hover/comments:underline",
+              )}
+            >
+              {showComments ? "Hide" : "View"} {review.commentCount}{" "}
+              {review.commentCount === 1 ? "comment" : "comments"}
+            </span>
+            {commentsFetching && (
+              <VscLoading className="text-primary text-xs animate-spin ml-1" />
+            )}
+          </button>
+        )}
       </div>
+
+      {/* Nested comments (Reddit-style thread) */}
+      {showComments && (
+        <div className="flex flex-row mt-1">
+          {/* Thread line */}
+          <div className="flex flex-col items-center w-5 shrink-0">
+            <div className="w-px flex-1 bg-slate-700/40" />
+          </div>
+
+          {/* Comments list */}
+          <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+            {commentsLoading ? (
+              <div className="flex items-center gap-2 py-3 pl-2">
+                <VscLoading className="text-primary text-sm animate-spin" />
+                <span
+                  className={cn(
+                    inter.className,
+                    "text-[0.65em] text-slate-500",
+                  )}
+                >
+                  Loading comments…
+                </span>
+              </div>
+            ) : reviewComments.length === 0 ? (
+              <p
+                className={cn(
+                  inter.className,
+                  "text-[0.65em] text-slate-600 pl-2 py-2",
+                )}
+              >
+                No comments yet.
+              </p>
+            ) : (
+              reviewComments.map((comment) => (
+                <CommentItem
+                  key={comment.id}
+                  comment={comment}
+                  isOwner={currentUserId === comment.authorId}
+                  currentUserId={currentUserId}
+                  depth={0}
+                  onDelete={handleDeleteReviewComment}
+                  onUpdate={handleUpdateReviewComment}
+                  onSubmitReply={handleReplyOnReviewComment}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

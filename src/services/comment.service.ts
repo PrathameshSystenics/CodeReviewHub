@@ -4,6 +4,7 @@ import { addComment, deleteComment, getComment, getCommentCount, getComments, up
 import { CommentCountOnPost } from "@/types/comment";
 import { Session } from "next-auth";
 import { ReplyCommentInputs } from "@/schemas/comment";
+import { getReviewById } from "@/db/review.repo";
 
 export class PostCommentServiceError extends Error {
     constructor(
@@ -74,6 +75,36 @@ export async function getRepliesOnComment(postId: string, commentId: string) {
     } catch (error) {
         console.error(error)
         throw error
+    }
+}
+
+export async function addCommentOnReview(reviewId: string, userId: string, content: string) {
+    try {
+        const review = await getReviewById(reviewId)
+
+        if (!review) {
+            throw new PostCommentServiceError("Review not Found", status.NOT_FOUND)
+        }
+
+        // Review owner cannot comment on their own review
+        if (review.reviewerId === userId) {
+            throw new PostCommentServiceError("You cannot comment on your own review", status.BAD_REQUEST)
+        }
+
+        const commentId = await addComment(review.postId, null, content, userId, null, null, reviewId)
+        return commentId
+    } catch (error) {
+        console.error(error)
+        throw error;
+    }
+}
+
+export async function getCommentsOnReview(postId: string, reviewId: string) {
+    try {
+        return await getComments(postId, null, undefined, reviewId)
+    } catch (error) {
+        console.error(error)
+        throw error;
     }
 }
 
