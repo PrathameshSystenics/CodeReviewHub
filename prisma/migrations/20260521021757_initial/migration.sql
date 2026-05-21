@@ -2,6 +2,58 @@
 CREATE TYPE "CodeStatus" AS ENUM ('OPEN', 'ACCEPTED', 'CLOSED');
 
 -- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "name" TEXT,
+    "username" TEXT,
+    "email" TEXT NOT NULL,
+    "password" TEXT,
+    "emailVerified" TIMESTAMP(3),
+    "image" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Account" (
+    "userId" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "provider" TEXT NOT NULL,
+    "providerAccountId" TEXT NOT NULL,
+    "refresh_token" TEXT,
+    "access_token" TEXT,
+    "expires_at" INTEGER,
+    "token_type" TEXT,
+    "scope" TEXT,
+    "id_token" TEXT,
+    "session_state" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Account_pkey" PRIMARY KEY ("provider","providerAccountId")
+);
+
+-- CreateTable
+CREATE TABLE "Session" (
+    "sessionToken" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "expires" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "VerificationToken" (
+    "identifier" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "expires" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "VerificationToken_pkey" PRIMARY KEY ("identifier","token")
+);
+
+-- CreateTable
 CREATE TABLE "Post" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -9,7 +61,7 @@ CREATE TABLE "Post" (
     "published" BOOLEAN NOT NULL DEFAULT false,
     "language" TEXT NOT NULL,
     "code" TEXT,
-    "blobUrl" TEXT,
+    "blobName" TEXT,
     "requireReview" BOOLEAN NOT NULL DEFAULT true,
     "acceptedReviewId" TEXT,
     "requireComments" BOOLEAN NOT NULL DEFAULT true,
@@ -25,7 +77,6 @@ CREATE TABLE "Post" (
 CREATE TABLE "Review" (
     "id" TEXT NOT NULL,
     "content" TEXT NOT NULL,
-    "rating" INTEGER NOT NULL,
     "isAccepted" BOOLEAN NOT NULL DEFAULT false,
     "postId" TEXT NOT NULL,
     "reviewerId" TEXT NOT NULL,
@@ -39,7 +90,8 @@ CREATE TABLE "Review" (
 CREATE TABLE "Comment" (
     "id" TEXT NOT NULL,
     "content" TEXT NOT NULL,
-    "lineno" INTEGER,
+    "startlineno" INTEGER,
+    "endlineno" INTEGER,
     "postId" TEXT NOT NULL,
     "authorId" TEXT NOT NULL,
     "parentId" TEXT,
@@ -67,11 +119,61 @@ CREATE TABLE "PostTag" (
     CONSTRAINT "PostTag_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Languages" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "extension" TEXT NOT NULL,
+
+    CONSTRAINT "Languages_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserReputation" (
+    "id" TEXT NOT NULL,
+    "userid" TEXT NOT NULL,
+    "reputationid" INTEGER NOT NULL,
+    "score" INTEGER NOT NULL,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "UserReputation_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Reputation" (
+    "id" SERIAL NOT NULL,
+    "score" INTEGER NOT NULL,
+    "levelname" TEXT NOT NULL,
+
+    CONSTRAINT "Reputation_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Session_sessionToken_key" ON "Session"("sessionToken");
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Review_postId_reviewerId_key" ON "Review"("postId", "reviewerId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Tag_name_key" ON "Tag"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Languages_name_key" ON "Languages"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Reputation_levelname_key" ON "Reputation"("levelname");
+
+-- AddForeignKey
+ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Post" ADD CONSTRAINT "Post_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -99,3 +201,9 @@ ALTER TABLE "PostTag" ADD CONSTRAINT "PostTag_postId_fkey" FOREIGN KEY ("postId"
 
 -- AddForeignKey
 ALTER TABLE "PostTag" ADD CONSTRAINT "PostTag_tagId_fkey" FOREIGN KEY ("tagId") REFERENCES "Tag"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserReputation" ADD CONSTRAINT "UserReputation_userid_fkey" FOREIGN KEY ("userid") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserReputation" ADD CONSTRAINT "UserReputation_reputationid_fkey" FOREIGN KEY ("reputationid") REFERENCES "Reputation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
