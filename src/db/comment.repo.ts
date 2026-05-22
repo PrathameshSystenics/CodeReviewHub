@@ -36,6 +36,13 @@ export async function getComment(commentId: string) {
                         id: true,
                         email: true
                     }
+                },
+                post: {
+                    select: {
+                        status: true,
+                        published: true,
+                        requireComments: true,
+                    }
                 }
             }
         })

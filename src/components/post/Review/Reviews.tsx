@@ -10,11 +10,13 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { getReviewsForPostApi } from "@/api/review";
 import { Spinner } from "@/components/UI/spinner";
 import ReviewItemComponent from "./ReviewItem";
+import { CodeStatus } from "@generated/prisma/enums";
 
 interface ReviewsProps {
   postId: string;
   currentUserId: string | undefined;
   postOwnerId: string;
+  postStatus: CodeStatus;
 }
 
 //#region Font Declaration
@@ -22,7 +24,12 @@ const inter = Inter({ subsets: ["latin"] });
 const space_grotesk = Space_Grotesk({ subsets: ["latin"] });
 //#endregion
 
-const Reviews = ({ postId, currentUserId, postOwnerId }: ReviewsProps) => {
+const Reviews = ({
+  postId,
+  currentUserId,
+  postOwnerId,
+  postStatus
+}: ReviewsProps) => {
   //#region Use State Hooks
   const [sortBy, setSortBy] = useState<SortReview>("newest");
   //#endregion
@@ -96,6 +103,7 @@ const Reviews = ({ postId, currentUserId, postOwnerId }: ReviewsProps) => {
               return value.data?.reviews.map((review) => (
                 <ReviewItemComponent
                   key={review.id}
+                  postStatus={postStatus}
                   review={review}
                   currentUserId={currentUserId}
                   postOwnerId={postOwnerId}

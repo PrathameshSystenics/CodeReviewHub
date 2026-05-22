@@ -71,6 +71,7 @@ export async function POST(
 }
 
 export async function GET(
+    _request: NextRequest,
     ctx: RouteContext<"/api/code-post/[id]/review/[reviewId]/comment">,
 ) {
     try {

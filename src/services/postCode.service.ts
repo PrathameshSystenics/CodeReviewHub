@@ -186,7 +186,11 @@ export async function deletePost(postId: string, userid: string) {
       throw new PostCodeServiceError("Post not found", status.NOT_FOUND);
     }
 
-    if (posttoDelete.authorId !== userid) {
+    else if (posttoDelete.status !== "OPEN") {
+      throw new PostCodeServiceError("Cannot delete post which is not opened", status.NOT_ACCEPTABLE)
+    }
+
+    else if (posttoDelete.authorId !== userid) {
       throw new PostCodeServiceError("Unauthorized to delete this post", status.UNAUTHORIZED);
     }
 
@@ -232,6 +236,10 @@ export async function updatePostFormData(
 
   if (!posttoUpdate) {
     throw new PostCodeServiceError("Post not found", status.NOT_FOUND);
+  }
+
+  if (posttoUpdate.status !== "OPEN") {
+    throw new PostCodeServiceError("Cannot Update post which is not opened", status.NOT_ACCEPTABLE)
   }
 
   if (posttoUpdate.authorId !== userId) {

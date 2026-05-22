@@ -188,10 +188,9 @@ const PostEditForm = ({ post }: PostEditFormProps) => {
 
     // call the create post api
     updatePostApi(post.id, formdata).then((response) => {
-      // TODO: redirect to the updated post view page.
       if (response.status === "success") {
         toast.success(response.message);
-        router.replace("/");
+        router.replace(`/post/${response.data}`);
       } else {
         toast.error(response.message);
       }

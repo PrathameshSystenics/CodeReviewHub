@@ -10,11 +10,19 @@ import { highlightCodeByLine, type Token } from "@/lib/shiki";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { JetBrains_Mono } from "next/font/google";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "react-toastify";
 import CodeLine from "./CodeLine";
 import LineCommentPopover from "./Comment/LineCommentPopover";
 import LineCommentViewPopover from "./Comment/LineCommentViewPopover";
+import { CodeStatus } from "@generated/prisma/enums";
 
 //#region Font Declaration
 const jetbrains_mono = JetBrains_Mono({ subsets: ["latin"], weight: "400" });
@@ -25,9 +33,18 @@ interface CodeDisplayProps {
   language: string;
   owner: boolean;
   postid: string;
+  postStatus: CodeStatus;
+  requireComments: boolean;
 }
 
-const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
+const CodeDisplay = ({
+  code,
+  language,
+  owner,
+  postid,
+  postStatus,
+  requireComments,
+}: CodeDisplayProps) => {
   //#region State
   const [lines, setLines] = useState<Token[][] | null>(null);
   const [selectedStart, setSelectedStart] = useState<number | null>(null);
@@ -63,42 +80,45 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
     };
   }, [code, language]);
 
+  const onMouseUp = useEffectEvent(() => {
+    if (dragging.current) {
+      dragging.current = false;
+      setShowPopover(true);
+    }
+  });
+
+  const prevent = useEffectEvent((e: Event) => {
+    if (dragging.current) e.preventDefault();
+  });
+
   // Use Effect for Dragging the Line
   useEffect(() => {
-    const onMouseUp = () => {
-      if (dragging.current) {
-        dragging.current = false;
-        setShowPopover(true);
-      }
-    };
-
-    const prevent = (e: Event) => {
-      if (dragging.current) e.preventDefault();
-    };
-
-    if (!owner) {
+    if (!owner && requireComments) {
       document.addEventListener("mouseup", onMouseUp);
       document.addEventListener("selectstart", prevent);
     }
     return () => {
-      if (!owner) {
+      if (!owner && requireComments) {
         document.removeEventListener("selectstart", prevent);
         document.removeEventListener("mouseup", onMouseUp);
       }
     };
-  }, []);
+  }, [requireComments]);
   //#endregion
 
-  const onLineMouseDown = useCallback((line: number) => {
-    if (!owner) {
-      dragging.current = true;
-      dragFrom.current = line;
-      setSelectedStart(line);
-      setSelectedEnd(line);
-      setShowPopover(false);
-      setViewingCommentsLine(null);
-    }
-  }, []);
+  const onLineMouseDown = useCallback(
+    (line: number) => {
+      if (!owner && requireComments) {
+        dragging.current = true;
+        dragFrom.current = line;
+        setSelectedStart(line);
+        setSelectedEnd(line);
+        setShowPopover(false);
+        setViewingCommentsLine(null);
+      }
+    },
+    [owner, requireComments],
+  );
 
   const onLineMouseEnter = useCallback((line: number) => {
     if (!dragging.current || dragFrom.current === null) return;
@@ -163,6 +183,7 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
   );
 
   const isSelected = (line: number) => {
+    if (!requireComments) return false;
     if (selectedStart === null || selectedEnd === null) return false;
     return line >= selectedStart && line <= selectedEnd;
   };
@@ -206,6 +227,7 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
   const { data: commentsCountResponse } = useQuery({
     queryKey: ["comments", postid],
     queryFn: () => getCommentCountOnPostApi(postid),
+    enabled: requireComments,
   });
   //#endregion
 
@@ -215,9 +237,10 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
         {lines
           ? lines.map((tokens, i) => {
               const lineNum = i + 1;
-              const commentCount = commentsCountResponse?.data?.find(
-                (value) => value.startlineno === lineNum,
-              )?.count ?? 0;
+              const commentCount =
+                commentsCountResponse?.data?.find(
+                  (value) => value.startlineno === lineNum,
+                )?.count ?? 0;
 
               return (
                 <div key={i}>
@@ -225,6 +248,7 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
                     lineNumber={lineNum}
                     tokens={tokens}
                     owner={owner}
+                    showCommentButton={requireComments}
                     isSelected={isSelected(lineNum)}
                     isHighlighted={isHighlighted(lineNum)}
                     commentCount={commentCount}
@@ -235,7 +259,8 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
                   />
 
                   {/* Show add-comment popover right below the last selected line */}
-                  {!owner &&
+                  {requireComments &&
+                    !owner &&
                     showPopover &&
                     selectedEnd === lineNum &&
                     selectedStart !== null && (
@@ -253,6 +278,7 @@ const CodeDisplay = ({ code, language, owner, postid }: CodeDisplayProps) => {
                       <LineCommentViewPopover
                         postId={postid}
                         lineNumber={lineNum}
+                        postStatus={postStatus}
                         comments={viewingComments}
                         currentUserId={currentUserId}
                         loading={viewingCommentsLoading}

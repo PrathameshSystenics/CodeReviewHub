@@ -29,6 +29,15 @@ export async function getReviewById(reviewId: string) {
     const review = await prisma.review.findUnique({
         where: {
             id: reviewId
+        },
+        include: {
+            post: {
+                select: {
+                    status: true,
+                    published: true,
+                    requireReview: true
+                }
+            }
         }
     })
     return review

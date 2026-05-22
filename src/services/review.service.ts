@@ -25,11 +25,15 @@ export async function addReviewForPost(postId: string, user: Session, reviewSche
             throw new ReviewServiceError("Post not Found", status.NOT_FOUND)
         }
 
-        if (post.authorId === user.user.id) {
+        else if (!post.requireReview) {
+            throw new ReviewServiceError("Cannot add review for the post", status.NOT_ACCEPTABLE)
+        }
+
+        else if (post.authorId === user.user.id) {
             throw new ReviewServiceError("Author Cannot Review thier Own Post", status.NOT_ACCEPTABLE)
         }
 
-        if (post.status === "ACCEPTED" || post.status === "CLOSED" || !post.published) {
+        else if (post.status !== "OPEN" || !post.published) {
             throw new ReviewServiceError("Cannot Review the post when it is Accepted,Closed or Not Published", status.NOT_ACCEPTABLE)
         }
 
@@ -110,6 +114,10 @@ export async function deleteReviewForPost(reviewId: string, user: Session) {
             throw new ReviewServiceError("Review not Found", status.NOT_FOUND)
         }
 
+        if (review.post.status !== "OPEN" || !review.post.published) {
+            throw new ReviewServiceError("Cannot Review the post when it is Accepted,Closed or Not Published", status.NOT_ACCEPTABLE)
+        }
+
         // Only the reviewer can delete their own review
         if (review.reviewerId !== user.user.id) {
             throw new ReviewServiceError("You are not authorized to delete this review", status.FORBIDDEN)
@@ -131,8 +139,12 @@ export async function updateReviewForPost(reviewId: string, content: string, use
             throw new ReviewServiceError("Review not Found", status.NOT_FOUND)
         }
 
+        else if (review.post.status !== "OPEN" || !review.post.published) {
+            throw new ReviewServiceError("Cannot Review the post when it is Accepted,Closed or Not Published", status.NOT_ACCEPTABLE)
+        }
+
         // Only the reviewer can update their own review
-        if (review.reviewerId !== user.user.id) {
+        else if (review.reviewerId !== user.user.id) {
             throw new ReviewServiceError("You are not authorized to update this review", status.FORBIDDEN)
         }
 

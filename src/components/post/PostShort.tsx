@@ -124,16 +124,20 @@ const PostShort = ({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              className="p-2 text-slate-500 hover:text-slate-300 hover:bg-white/5 rounded-lg transition-colors"
-              onClick={handleEdit}
-            >
-              <FiEdit2 className="text-sm" />
-            </button>
-            <PostDeleteConfirmModal
-              postId={id}
-              onDelete={() => handleDelete(id)}
-            />
+            {status === "OPEN" && (
+              <>
+                <button
+                  className="p-2 text-slate-500 hover:text-slate-300 hover:bg-white/5 rounded-lg transition-colors"
+                  onClick={handleEdit}
+                >
+                  <FiEdit2 className="text-sm" />
+                </button>
+                <PostDeleteConfirmModal
+                  postId={id}
+                  onDelete={() => handleDelete(id)}
+                />
+              </>
+            )}
             <PostStatusBadge status={status} isDraft={!published} />
           </div>
         </div>

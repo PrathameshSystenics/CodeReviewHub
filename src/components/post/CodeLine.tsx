@@ -18,6 +18,7 @@ interface CodeLineProps {
   isSelected: boolean;
   isHighlighted: boolean;
   commentCount: number;
+  showCommentButton: boolean;
   onLineMouseDown: (line: number) => void;
   onLineMouseEnter: (line: number) => void;
   onAddComment: (line: number) => void;
@@ -31,6 +32,7 @@ const CodeLine = ({
   isHighlighted,
   owner,
   commentCount,
+  showCommentButton,
   onLineMouseDown,
   onLineMouseEnter,
   onAddComment,
@@ -49,12 +51,14 @@ const CodeLine = ({
       )}
     >
       {/* Comment count button — at the very start */}
-      <div className="w-8 shrink-0 flex items-center justify-center">
-        <LineCommentButton
-          count={commentCount}
-          onClick={() => onViewComments(lineNumber)}
-        />
-      </div>
+      {showCommentButton && (
+        <div className="w-8 shrink-0 flex items-center justify-center">
+          <LineCommentButton
+            count={commentCount}
+            onClick={() => onViewComments(lineNumber)}
+          />
+        </div>
+      )}
 
       {/* Line Number - click & drag on this to select lines */}
       <div
@@ -65,7 +69,7 @@ const CodeLine = ({
             : isHighlighted
               ? "text-amber-400/70"
               : "text-slate-600 group-hover:text-slate-400",
-          !owner && "cursor-pointer",
+          !owner && showCommentButton && "cursor-pointer",
         )}
         onMouseDown={(e) => {
           e.preventDefault();
@@ -76,7 +80,7 @@ const CodeLine = ({
         {lineNumber}
       </div>
 
-      {!owner && (
+      {showCommentButton && !owner && (
         <div className="w-9 shrink-0 flex items-center justify-center">
           <button
             onClick={() => onAddComment(lineNumber)}

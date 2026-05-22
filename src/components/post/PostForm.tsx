@@ -95,14 +95,14 @@ const PostForm = () => {
     queryKey: ["languages"],
     queryFn: getLanguages,
     staleTime: 60000,
-    initialData: [],
+    placeholderData: [],
   });
 
   const { data: tags } = useQuery({
     queryKey: ["tags"],
     queryFn: getTags,
     staleTime: 60000,
-    initialData: [],
+    placeholderData: [],
   });
   //#endregion
 
@@ -190,10 +190,9 @@ const PostForm = () => {
 
     // call the create post api
     createPostApi(formdata).then((response) => {
-      // TODO: redirect to the newly created post
       if (response.status === "success") {
         toast.success(response.message);
-        router.replace("/");
+        router.replace(`/post/${response.data}`);
       } else {
         toast.error(response.message);
       }
@@ -368,6 +367,7 @@ const PostForm = () => {
                   control={control}
                   render={({ field }) => (
                     <Select
+                      instanceId="language-select"
                       inputId="language"
                       options={languageOptions}
                       value={
@@ -467,6 +467,7 @@ const PostForm = () => {
                   control={control}
                   render={({ field }) => (
                     <Creatable
+                      instanceId="tags-select"
                       inputId="tags"
                       options={tagOptions}
                       value={getSelectedTagOptions(field.value)}

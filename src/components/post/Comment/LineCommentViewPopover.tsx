@@ -17,6 +17,7 @@ import { useCallback } from "react";
 import { VscClose, VscComment, VscLoading } from "react-icons/vsc";
 import { toast } from "react-toastify";
 import CommentItem from "./CommentItem";
+import { CodeStatus } from "@generated/prisma/enums";
 
 //#region Font Declaration
 const inter = Inter({ subsets: ["latin"] });
@@ -26,6 +27,7 @@ const jetbrains_mono = JetBrains_Mono({ subsets: ["latin"], weight: "400" });
 interface LineCommentViewPopoverProps {
   postId: string;
   lineNumber: number;
+  postStatus: CodeStatus;
   comments: CommentWithAuthorAndReplyCount[];
   currentUserId: string | undefined;
   loading: boolean;
@@ -37,6 +39,7 @@ const LineCommentViewPopover = ({
   lineNumber,
   comments,
   currentUserId,
+  postStatus,
   loading,
   onClose,
 }: LineCommentViewPopoverProps) => {
@@ -113,9 +116,7 @@ const LineCommentViewPopover = ({
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-700/30 bg-[#0f1825] rounded-t-xl">
           <div className="flex items-center gap-2">
             <VscComment className="text-primary text-sm" />
-            <span className="text-slate-300 text-xs font-medium">
-              Comments
-            </span>
+            <span className="text-slate-300 text-xs font-medium">Comments</span>
             <span
               className={`${jetbrains_mono.className} text-[10px] text-slate-500 bg-slate-800/60 px-1.5 py-0.5 rounded`}
             >
@@ -149,6 +150,7 @@ const LineCommentViewPopover = ({
               <CommentItem
                 key={comment.id}
                 comment={comment}
+                postStatus={postStatus}
                 isOwner={currentUserId === comment.authorId}
                 currentUserId={currentUserId}
                 onDelete={handleDelete}

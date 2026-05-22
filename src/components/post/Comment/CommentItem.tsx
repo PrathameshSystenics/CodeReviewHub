@@ -1,15 +1,10 @@
 "use client";
 
-import {
-  deleteCommentReplyApi,
-  getRepliesOnCommentApi,
-  replyOnCommentApi,
-  updateCommentReplyApi,
-} from "@/api/comment";
+import { getRepliesOnCommentApi } from "@/api/comment";
 import UserProfileImage from "@/components/auth/UserProfileImage";
 import { cn } from "@/lib/utils";
 import { CommentWithAuthorAndReplyCount } from "@/types/comment";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import {
   memo,
@@ -22,8 +17,8 @@ import {
 import { BsThreeDots } from "react-icons/bs";
 import { FaAngleDown, FaAngleUp } from "react-icons/fa";
 import { VscEdit, VscLoading, VscSend, VscTrash } from "react-icons/vsc";
-import { toast } from "react-toastify";
 import TimeAgoComponent from "../TimeAgoComponent";
+import { CodeStatus } from "@generated/prisma/enums";
 
 //#region Font Declaration
 const inter = Inter({ subsets: ["latin"] });
@@ -35,6 +30,7 @@ interface CommentItemProps {
   isOwner: boolean;
   currentUserId: string | undefined;
   depth?: number;
+  postStatus: CodeStatus;
   onDelete: (commentId: string) => Promise<void>;
   onUpdate: (commentId: string, content: string) => Promise<void>;
   onSubmitReply: (commentId: string, content: string) => Promise<void>;
@@ -45,6 +41,7 @@ const CommentItem = ({
   isOwner,
   currentUserId,
   depth = 0,
+  postStatus,
   onDelete,
   onUpdate,
   onSubmitReply,
@@ -57,7 +54,6 @@ const CommentItem = ({
   const [showReplies, setShowReplies] = useState(false);
   //#endregion
 
-  const queryclient = useQueryClient();
   const menuRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -105,10 +101,11 @@ const CommentItem = ({
         ? `L${comment.startlineno}`
         : null;
 
-  //#region Own CRUD — fully delegated to props, no API calls here
+  //#region Own CRUD
   const handleSaveEdit = async () => {
     if (!editContent.trim()) return;
     await onUpdate(comment.id, editContent.trim());
+    comment.content = editContent;
     setEditing(false);
   };
 
@@ -146,68 +143,6 @@ const CommentItem = ({
   const handleDelete = useCallback(async () => {
     await onDelete(comment.id);
   }, [onDelete, comment.id]);
-  //#endregion
-
-  //#region Nested reply handlers — CommentItem acts as parent for its own children
-  const handleDeleteNestedReply = useCallback(
-    async (replyId: string) => {
-      const response = await deleteCommentReplyApi(replyId, comment.postId);
-      if (response.status === "success") {
-        toast.info("Deleted the Comment Successfully");
-        queryclient.invalidateQueries({
-          queryKey: ["replies", comment.postId, comment.id],
-        });
-        queryclient.invalidateQueries({
-          queryKey: ["view-comments", comment.postId, comment.startlineno],
-        });
-        queryclient.invalidateQueries({
-          queryKey: ["comments", comment.postId],
-        });
-      } else {
-        toast.error(response.message || "Failed to delete the reply");
-      }
-    },
-    [comment.postId, comment.id, comment.startlineno, queryclient],
-  );
-
-  const handleUpdateNestedReply = useCallback(
-    async (replyId: string, content: string) => {
-      const response = await updateCommentReplyApi(replyId, comment.postId, {
-        content,
-      });
-      if (response.status === "success") {
-        toast.info("Updated the Comment/Reply");
-        queryclient.invalidateQueries({
-          queryKey: ["replies", comment.postId, comment.id],
-        });
-        queryclient.invalidateQueries({
-          queryKey: ["view-comments", comment.postId, comment.startlineno],
-        });
-      } else {
-        toast.error("Failed to Edit the Comment");
-      }
-    },
-    [comment.postId, comment.id, comment.startlineno, queryclient],
-  );
-
-  const handleSubmitNestedReply = useCallback(
-    async (replyCommentId: string, content: string) => {
-      const response = await replyOnCommentApi(comment.postId, replyCommentId, {
-        content,
-      });
-      if (response.status === "success") {
-        queryclient.invalidateQueries({
-          queryKey: ["replies", comment.postId, replyCommentId],
-        });
-        queryclient.invalidateQueries({
-          queryKey: ["view-comments", comment.postId, comment.startlineno],
-        });
-      } else {
-        toast.error(response.message || "Failed to add reply");
-      }
-    },
-    [comment.postId, comment.startlineno, queryclient],
-  );
   //#endregion
 
   return (
@@ -249,7 +184,7 @@ const CommentItem = ({
           </div>
 
           {/* Triple-dot menu for the comment owner */}
-          {isOwner && !editing && (
+          {postStatus === "OPEN" && isOwner && !editing && (
             <div ref={menuRef} className="relative">
               <button
                 onClick={() => setMenuOpen((prev) => !prev)}
@@ -327,7 +262,7 @@ const CommentItem = ({
         )}
 
         {/* Reply input */}
-        {!isOwner && !editing && (
+        {postStatus === "OPEN" && !isOwner && !editing && (
           <div className="flex items-center gap-1.5 mt-2">
             <input
               type="text"
@@ -417,12 +352,13 @@ const CommentItem = ({
                 <CommentItem
                   key={reply.id}
                   comment={reply}
+                  postStatus={postStatus}
                   isOwner={currentUserId === reply.authorId}
                   currentUserId={currentUserId}
                   depth={depth + 1}
-                  onDelete={handleDeleteNestedReply}
-                  onUpdate={handleUpdateNestedReply}
-                  onSubmitReply={handleSubmitNestedReply}
+                  onDelete={onDelete}
+                  onUpdate={onUpdate}
+                  onSubmitReply={onSubmitReply}
                 />
               ))
             )}

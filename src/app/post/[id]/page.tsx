@@ -56,27 +56,6 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
       IncludeAuther: true,
       IncludeTags: true,
     });
-
-    if (!post) {
-      notFound();
-    }
-
-    // Check if the LoggedIn user is owner or not.
-    const user = await getOptionalServerSession();
-    currentUserId = user?.user.id;
-    if (user?.user.id === post.author.id) {
-      owner = true;
-    }
-
-    // Post in Draft Mode then Not Found
-    if (!post.published) notFound();
-
-    // Fetch the Review for the LoggedInUser
-    const reviewUser = await getReviewByUserIdForPost(id, user!);
-
-    if (reviewUser) {
-      reviewPosted = true;
-    }
   } catch (error) {
     if (error instanceof PostCodeServiceError) {
       if (error.statusCode === status.NOT_FOUND) {
@@ -84,6 +63,25 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
       } else {
         throw error;
       }
+    }
+    throw error;
+  }
+
+  // Post not found
+  if (!post) notFound();
+
+  // Post in Draft Mode — only the owner can view it
+  const user = await getOptionalServerSession();
+  currentUserId = user?.user.id;
+  owner = user?.user.id === post.authorId;
+
+  if (!post.published && !owner) notFound();
+
+  // Fetch the Review for the LoggedIn user
+  if (post.requireReview && user) {
+    const reviewUser = await getReviewByUserIdForPost(id, user);
+    if (reviewUser) {
+      reviewPosted = true;
     }
   }
 
@@ -136,7 +134,7 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
             </div>
           </div>
           {/* Edit Link */}
-          {owner && (
+          {owner && post?.status === "OPEN" && (
             <div className={cn(inter.className, "text-sm bg-")}>
               <Link
                 href={`/post/${id}/edit`}
@@ -157,15 +155,29 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
             code={post.code}
             language={post.language}
             owner={owner}
+            postStatus={post.status}
             postid={post.id}
+            requireComments={post.requireComments}
           />
         )}
 
         {/* Reviews - Editor */}
-        <div>{!reviewPosted && <ReviewEditor postId={post?.id!} />}</div>
+        <div>
+          {post.requireReview &&
+            !reviewPosted &&
+            !owner &&
+            post?.status === "OPEN" && <ReviewEditor postId={post?.id!} />}
+        </div>
 
         {/* Reviews */}
-        <Reviews postId={post?.id!} currentUserId={currentUserId} postOwnerId={post?.authorId!} />
+        {post.published && post.requireReview && (
+          <Reviews
+            postId={post?.id!}
+            postStatus={post?.status!}
+            currentUserId={currentUserId}
+            postOwnerId={post?.authorId!}
+          />
+        )}
       </article>
     </div>
   );

@@ -17,6 +17,7 @@ import CommentItem from "@/components/post/Comment/CommentItem";
 import { Spinner } from "@/components/UI/spinner";
 import { cn } from "@/lib/utils";
 import { type ReviewItem } from "@/types/review";
+import { CodeStatus } from "@generated/prisma/enums";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import "@uiw/react-markdown-preview/markdown.css";
 import dynamic from "next/dynamic";
@@ -60,12 +61,14 @@ interface ReviewItemComponentProps {
   review: ReviewItem;
   currentUserId: string | undefined;
   postOwnerId: string;
+  postStatus: CodeStatus;
 }
 
 const ReviewItemComponent = ({
   review,
   currentUserId,
   postOwnerId,
+  postStatus,
 }: ReviewItemComponentProps) => {
   //#region State Hooks
   const [menuOpen, setMenuOpen] = useState(false);
@@ -328,7 +331,7 @@ const ReviewItemComponent = ({
             )}
 
             {/* Triple-dot menu for the review owner */}
-            {isReviewOwner && !editing && (
+            {isReviewOwner && !editing && postStatus === "OPEN" && (
               <div ref={menuRef} className="relative">
                 <button
                   onClick={() => setMenuOpen((prev) => !prev)}
@@ -421,33 +424,36 @@ const ReviewItemComponent = ({
         )}
 
         {/* Comment input — only for non-review-owner users when not editing */}
-        {!isReviewOwner && !editing && currentUserId && (
-          <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-700/20">
-            <input
-              type="text"
-              value={commentInput}
-              onChange={(e) => setCommentInput(e.target.value)}
-              onKeyDown={handleCommentKeyDown}
-              placeholder="Add a comment on this review… (Ctrl+Enter)"
-              className={cn(
-                jetbrains_mono.className,
-                "flex-1 bg-[#0a1220] border border-slate-700/40 rounded-lg px-2.5 py-1.5 text-[0.75em] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all",
-              )}
-            />
-            <button
-              onClick={handleSubmitComment}
-              disabled={!commentInput.trim() || submittingComment}
-              title="Send comment (Ctrl+Enter)"
-              className="shrink-0 p-1.5 rounded-lg bg-primary/90 hover:bg-primary text-slate-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {submittingComment ? (
-                <VscLoading className="text-sm animate-spin" />
-              ) : (
-                <VscSend className="text-sm" />
-              )}
-            </button>
-          </div>
-        )}
+        {postStatus === "OPEN" &&
+          !isReviewOwner &&
+          !editing &&
+          currentUserId && (
+            <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-700/20">
+              <input
+                type="text"
+                value={commentInput}
+                onChange={(e) => setCommentInput(e.target.value)}
+                onKeyDown={handleCommentKeyDown}
+                placeholder="Add a comment on this review… (Ctrl+Enter)"
+                className={cn(
+                  jetbrains_mono.className,
+                  "flex-1 bg-[#0a1220] border border-slate-700/40 rounded-lg px-2.5 py-1.5 text-[0.75em] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all",
+                )}
+              />
+              <button
+                onClick={handleSubmitComment}
+                disabled={!commentInput.trim() || submittingComment}
+                title="Send comment (Ctrl+Enter)"
+                className="shrink-0 p-1.5 rounded-lg bg-primary/90 hover:bg-primary text-slate-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {submittingComment ? (
+                  <VscLoading className="text-sm animate-spin" />
+                ) : (
+                  <VscSend className="text-sm" />
+                )}
+              </button>
+            </div>
+          )}
 
         {/* View comments toggle */}
         {review.commentCount > 0 && (
@@ -517,6 +523,7 @@ const ReviewItemComponent = ({
               reviewComments.map((comment) => (
                 <CommentItem
                   key={comment.id}
+                  postStatus={postStatus}
                   comment={comment}
                   isOwner={currentUserId === comment.authorId}
                   currentUserId={currentUserId}

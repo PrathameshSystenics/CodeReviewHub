@@ -20,13 +20,18 @@ export async function addCommentOnPost(postId: string, userId: string, content: 
     try {
         const post = await getPostByIdService(postId, {})
 
+        // Check if adding comment is allowed on post or not
+        if (!post.requireComments) {
+            throw new PostCommentServiceError("The Post Does not accept the Comment Posting", status.NOT_ACCEPTABLE)
+        }
+
         // Own user cannot add the comment on his post
-        if (post.authorId === userId) {
+        else if (post.authorId === userId) {
             throw new PostCommentServiceError("Author Cannot comment on their own post", status.BAD_REQUEST)
         }
 
         // Disallow on adding the comment on accepted or closed post.
-        if (post.status === "ACCEPTED" || post.status === "CLOSED" || !post.published) {
+        else if (post.status === "ACCEPTED" || post.status === "CLOSED" || !post.published) {
             throw new PostCommentServiceError("Cannot comment on Closed/Accepted Post", status.BAD_REQUEST)
         }
 
@@ -44,6 +49,10 @@ export async function replyOnComment(commentId: string, content: string, userid:
 
         if (!comment) {
             throw new PostCommentServiceError("Comment Not Found", status.NOT_FOUND)
+        }
+
+        else if (comment.post.status !== "OPEN" || !comment.post.published) {
+            throw new PostCommentServiceError("Cannot Comment on the Post which is not published or Open Post", status.NOT_ACCEPTABLE)
         }
 
         else if (comment.authorId === userid) {
@@ -86,8 +95,12 @@ export async function addCommentOnReview(reviewId: string, userId: string, conte
             throw new PostCommentServiceError("Review not Found", status.NOT_FOUND)
         }
 
+        else if (review.post.status !== "OPEN" || !review.post.published) {
+            throw new PostCommentServiceError("Cannot Review on the Post which is not published or Open Post", status.NOT_ACCEPTABLE)
+        }
+
         // Review owner cannot comment on their own review
-        if (review.reviewerId === userId) {
+        else if (review.reviewerId === userId) {
             throw new PostCommentServiceError("You cannot comment on your own review", status.BAD_REQUEST)
         }
 
@@ -132,6 +145,10 @@ export async function deleteCommentOrReply(commentId: string, user: Session) {
             throw new PostCommentServiceError("Comment Not Found", status.NOT_FOUND)
         }
 
+        else if (comment.post.status !== "OPEN" || !comment.post.published) {
+            throw new PostCommentServiceError("Cannot delete comment on the Post which is not published or Open Post", status.NOT_ACCEPTABLE)
+        }
+
         if (comment?.authorId !== user.user.id) {
             throw new PostCommentServiceError("You cannot delete other user comment", status.BAD_REQUEST)
         }
@@ -153,7 +170,11 @@ export async function updateCommentOrReplyContent(commentId: string, replyschema
             throw new PostCommentServiceError("Comment Not Found", status.NOT_FOUND)
         }
 
-        if (comment.authorId !== user.user.id) {
+        else if (comment.post.status !== "OPEN" || !comment.post.published) {
+            throw new PostCommentServiceError("Cannot update comment on the Post which is not published or Open Post", status.NOT_ACCEPTABLE)
+        }
+
+        else if (comment.authorId !== user.user.id) {
             throw new PostCommentServiceError("You cannot update other user comment", status.BAD_REQUEST)
         }
 

@@ -171,36 +171,6 @@ export async function getPostById(postId: string, propertyBag?: PropertyBag): Pr
       };
     }
 
-    if (propertyBag?.IncludeComments) {
-      include.comments = {
-        select: {
-          id: true,
-          content: true,
-          lineno: true,
-          authorId: true,
-          author: { select: { id: true, name: true, image: true } },
-          parentId: true,
-          createdAt: true,
-        },
-        orderBy: { createdAt: "desc" },
-      };
-    }
-
-    if (propertyBag?.IncludeReviews) {
-      include.reviews = {
-        select: {
-          id: true,
-          content: true,
-          rating: true,
-          isAccepted: true,
-          reviewerId: true,
-          reviewer: { select: { id: true, name: true, image: true } },
-          createdAt: true,
-        },
-        orderBy: { createdAt: "desc" },
-      };
-    }
-
     const hasIncludes = Object.keys(include).length > 0;
 
     return await prisma.post.findUnique({
