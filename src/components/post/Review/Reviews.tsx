@@ -40,7 +40,7 @@ const Reviews = ({
     useInfiniteQuery({
       queryKey: ["reviews", postId, sortBy],
       queryFn: ({ pageParam }) => {
-        return getReviewsForPostApi(postId, pageParam, 2, sortBy);
+        return getReviewsForPostApi(postId, pageParam, 6, sortBy);
       },
       select: (data) => data.pages,
       initialPageParam: 1,
