@@ -23,11 +23,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import "@uiw/react-markdown-preview/markdown.css";
 import dynamic from "next/dynamic";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
-import {
-  memo,
-  useCallback,
-  useState,
-} from "react";
+import { memo, useCallback, useState } from "react";
 import { FaAngleDown, FaAngleUp, FaCheck } from "react-icons/fa";
 import { VscLoading, VscSend } from "react-icons/vsc";
 import { toast } from "react-toastify";
@@ -96,7 +92,6 @@ const ReviewItemComponent = ({
 
   const reviewComments = commentsResponse?.data ?? [];
   //#endregion
-
 
   //#region Review Handlers
   const handleSaveEdit = useCallback(async () => {
@@ -288,7 +283,7 @@ const ReviewItemComponent = ({
           {/* Action Menu */}
           <div className="flex items-center gap-2">
             {/* Accept button for post owner (only if not already accepted) */}
-            {isPostOwner && !review.isAccepted && !editing && (
+            {isPostOwner && postStatus === "OPEN" && !editing && (
               <button
                 onClick={handleAccept}
                 disabled={accepting}

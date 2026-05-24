@@ -66,9 +66,10 @@ export async function getReviews(postId: string, page: number, pageSize: number,
         },
         take: pageSize,
         skip: Math.max((page - 1) * pageSize, 0),
-        orderBy: {
-            createdAt: sort === "newest" ? "desc" : "asc"
-        }
+        orderBy: [
+            { isAccepted: "desc" },
+            { createdAt: sort === "newest" ? "desc" : "asc" },
+        ]
     })
 
     // Get the total count of the review related to that postid.
