@@ -11,6 +11,7 @@ import { getReviewsForPostApi } from "@/api/review";
 import { Spinner } from "@/components/UI/spinner";
 import ReviewItemComponent from "./ReviewItem";
 import { CodeStatus } from "@generated/prisma/enums";
+import InfiniteScroll from "react-infinite-scroll-component";
 
 interface ReviewsProps {
   postId: string;
@@ -28,18 +29,18 @@ const Reviews = ({
   postId,
   currentUserId,
   postOwnerId,
-  postStatus
+  postStatus,
 }: ReviewsProps) => {
   //#region Use State Hooks
   const [sortBy, setSortBy] = useState<SortReview>("newest");
   //#endregion
 
   //#region React Query Hooks
-  const { data, isLoading, error, isError, hasNextPage, isFetching } =
+  const { data, isLoading, isError, hasNextPage, isFetching, fetchNextPage } =
     useInfiniteQuery({
-      queryKey: ["reviews", postId],
+      queryKey: ["reviews", postId, sortBy],
       queryFn: ({ pageParam }) => {
-        return getReviewsForPostApi(postId, pageParam, 6, sortBy);
+        return getReviewsForPostApi(postId, pageParam, 2, sortBy);
       },
       select: (data) => data.pages,
       initialPageParam: 1,
@@ -47,6 +48,8 @@ const Reviews = ({
         lastpage.data?.hasNextPage ? lastpage.data.currentPage + 1 : undefined,
     });
   //#endregion
+
+  const allReviews = data?.flatMap((page) => page.data?.reviews ?? []) ?? [];
 
   return (
     <div className="mt-5">
@@ -73,8 +76,10 @@ const Reviews = ({
         </div>
         <SortReviewSelect value={sortBy} onValueChange={setSortBy} />
       </div>
+
       {/* Review Items */}
       <div className="mt-4 flex flex-col gap-3">
+        {/* Initial loading state */}
         {isLoading && isFetching && (
           <div className="flex flex-row justify-center items-center gap-1">
             <Spinner className="text-slate-300 size-5" />
@@ -84,6 +89,7 @@ const Reviews = ({
           </div>
         )}
 
+        {/* Error state */}
         {!isLoading && !isFetching && isError && (
           <div className="text-center w-full">
             <span
@@ -97,20 +103,44 @@ const Reviews = ({
           </div>
         )}
 
-        {!isLoading && !isFetching && !isError && (
-          <>
-            {data?.map((value, pageIndex) => {
-              return value.data?.reviews.map((review) => (
-                <ReviewItemComponent
-                  key={review.id}
-                  postStatus={postStatus}
-                  review={review}
-                  currentUserId={currentUserId}
-                  postOwnerId={postOwnerId}
-                />
-              ));
-            })}
-          </>
+        {/* Infinite scroll list */}
+        {!isLoading && !isError && (
+          <InfiniteScroll
+            dataLength={allReviews.length}
+            next={fetchNextPage}
+            hasMore={hasNextPage ?? false}
+            loader={
+              <div className="flex flex-row justify-center items-center gap-1.5 py-4">
+                <Spinner className="text-primary size-4" />
+                <span className={cn(inter.className, "text-slate-400 text-xs")}>
+                  Loading more reviews…
+                </span>
+              </div>
+            }
+            endMessage={
+              allReviews.length > 0 && (
+                <p
+                  className={cn(
+                    inter.className,
+                    "text-center text-xs text-slate-600 py-3",
+                  )}
+                >
+                  You&apos;ve seen all reviews
+                </p>
+              )
+            }
+            className="flex flex-col gap-3"
+          >
+            {allReviews.map((review) => (
+              <ReviewItemComponent
+                key={review.id}
+                postStatus={postStatus}
+                review={review}
+                currentUserId={currentUserId}
+                postOwnerId={postOwnerId}
+              />
+            ))}
+          </InfiniteScroll>
         )}
       </div>
     </div>
