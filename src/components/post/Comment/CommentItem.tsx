@@ -10,14 +10,13 @@ import {
   memo,
   useCallback,
   useEffect,
-  useEffectEvent,
   useRef,
   useState,
 } from "react";
-import { BsThreeDots } from "react-icons/bs";
 import { FaAngleDown, FaAngleUp } from "react-icons/fa";
-import { VscEdit, VscLoading, VscSend, VscTrash } from "react-icons/vsc";
+import { VscLoading, VscSend } from "react-icons/vsc";
 import TimeAgoComponent from "../TimeAgoComponent";
+import ThreeDotsMenu from "../ThreeDotsMenu";
 import { CodeStatus } from "@generated/prisma/enums";
 
 //#region Font Declaration
@@ -47,14 +46,12 @@ const CommentItem = ({
   onSubmitReply,
 }: CommentItemProps) => {
   //#region State Hooks
-  const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [replyContent, setReplyContent] = useState("");
   const [showReplies, setShowReplies] = useState(false);
   //#endregion
 
-  const menuRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   //#region React Query for fetching replies
@@ -72,20 +69,7 @@ const CommentItem = ({
   const replies = repliesResponse?.data ?? [];
   //#endregion
 
-  const handleMouseDown = useEffectEvent((e: MouseEvent) => {
-    if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-      setMenuOpen(false);
-    }
-  });
-
   //#region UseEffect Hooks
-  // Close menu on outside click
-  useEffect(() => {
-    if (!menuOpen) return;
-    document.addEventListener("mousedown", handleMouseDown);
-    return () => document.removeEventListener("mousedown", handleMouseDown);
-  }, [menuOpen]);
-
   // Auto-focus textarea when editing starts
   useEffect(() => {
     if (editing) {
@@ -185,41 +169,11 @@ const CommentItem = ({
 
           {/* Triple-dot menu for the comment owner */}
           {postStatus === "OPEN" && isOwner && !editing && (
-            <div ref={menuRef} className="relative">
-              <button
-                onClick={() => setMenuOpen((prev) => !prev)}
-                className="opacity-0 group-hover/comment:opacity-100 text-slate-500 hover:text-slate-300 p-1 rounded hover:bg-slate-700/40 transition-all cursor-pointer"
-                title="More options"
-              >
-                <BsThreeDots className="text-sm" />
-              </button>
-
-              {/* Dropdown menu */}
-              {menuOpen && (
-                <div className="absolute right-0 top-full mt-1 z-50 min-w-30 rounded-lg border border-slate-700/50 bg-[#131c2e] shadow-xl shadow-black/40 py-1 animate-in fade-in-0 zoom-in-95 duration-100">
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setEditing(true);
-                    }}
-                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700/40 hover:text-slate-100 transition-colors cursor-pointer"
-                  >
-                    <VscEdit className="text-sm text-primary/70" />
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      handleDelete();
-                    }}
-                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer"
-                  >
-                    <VscTrash className="text-sm" />
-                    Delete
-                  </button>
-                </div>
-              )}
-            </div>
+            <ThreeDotsMenu
+              groupHoverClass="group-hover/comment:opacity-100"
+              onEdit={() => setEditing(true)}
+              onDelete={handleDelete}
+            />
           )}
         </div>
 
