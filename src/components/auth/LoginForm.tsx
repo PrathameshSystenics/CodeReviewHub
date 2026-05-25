@@ -3,6 +3,7 @@
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { FaArrowRight, FaGoogle } from "react-icons/fa";
 import { MdOutlineVisibility, MdOutlineVisibilityOff } from "react-icons/md";
 import FormField from "@/components/auth/FormField";
@@ -119,6 +120,14 @@ const LoginForm = () => {
               </>
             }
           />
+          <div className={`${inter.className} text-right`}>
+            <Link
+              href="/forgot-password"
+              className="text-primary text-xs hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
 
           <div>
             <button

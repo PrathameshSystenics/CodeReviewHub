@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import FormField from "@/components/auth/FormField";
 import Divider from "../Divider";
-import { registerUser } from "@/api/auth/register";
+import { registerApi } from "@/api/auth";
 import { signIn } from "next-auth/react";
 import { registerSchema } from "@/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,13 +47,15 @@ const RegisterForm = () => {
 
   const onSubmit = async (data: RegisterInputs) => {
     try {
-      const result = await registerUser(data);
-      router.push("/login");
+      const result = await registerApi(data);
+      if (!result.success) {
+        toast.error(result.error || "Registration failed");
+        return;
+      }
       toast.success("Registration successful! Please log in.");
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Registration failed";
-      toast.error(message);
+      router.push("/login");
+    } catch {
+      toast.error("Something went wrong");
     }
   };
   //#endregion
