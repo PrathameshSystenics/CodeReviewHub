@@ -102,7 +102,7 @@ export default function ErrorPage({
             <span>Try Again</span>
           </button>
           <Link
-            href="/dashboard"
+            href="/browse"
             className="flex items-center gap-3 bg-slate-800/40 hover:bg-slate-800/80 text-slate-200 border border-slate-700/50 px-7 py-3 rounded-md font-semibold transition-all w-full sm:w-auto justify-center text-sm"
           >
             <MdOutlineDashboard className="text-xl" />
@@ -220,13 +220,8 @@ export default function ErrorPage({
         {/* Contact Link — shown only in production */}
         {!isDev && (
           <div className="flex justify-center mt-2">
-            <Link
-              href="/support"
-              className="flex items-center gap-2 text-slate-400 hover:text-sky-300 tracking-[0.08em] text-sm transition-colors uppercase font-medium"
-            >
-              <RiCustomerService2Line className="text-lg" />
-              <span>Contact System Support</span>
-            </Link>
+            <RiCustomerService2Line className="text-lg" />
+            <span>Contact System Support</span>
           </div>
         )}
       </div>

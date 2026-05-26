@@ -5,7 +5,7 @@ import {
   PostCodeServiceError,
 } from "@/services/postCode.service";
 import { APIResponse } from "@/types";
-import { SelectedPost } from "@/types/postCode";
+import { PostListItem } from "@/types/postCode";
 import status from "http-status";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
 
     const posts = await getPost(skip, take, user!.user.id);
 
-    return NextResponse.json<APIResponse<SelectedPost[]>>(
+    return NextResponse.json<APIResponse<PostListItem[]>>(
       {
         message: "Posts Fetch Successfully",
         status: "success",

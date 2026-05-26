@@ -1,0 +1,44 @@
+"use server";
+
+import BrowsePosts from "@/components/post/BrowsePosts";
+import BrowseFilters from "@/components/post/BrowseFilters";
+import { cn } from "@/lib/utils";
+import { Metadata } from "next";
+import { Space_Grotesk } from "next/font/google";
+import { Suspense } from "react";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Browse Posts",
+    description: "",
+  };
+}
+
+//#region Font Declaration
+const space_grotesk = Space_Grotesk({
+  subsets: ["latin"],
+});
+//#endregion
+
+export default async function BrowsePage() {
+  return (
+    <div className="w-full max-w-7xl mx-auto px-4 py-6 space-y-3.5">
+      <div className="flex flex-row flex-wrap justify-between items-center gap-1">
+        <h1
+          className={cn(
+            space_grotesk.className,
+            "text-xl font-bold text-slate-200 md:text-3xl tracking-tight",
+          )}
+        >
+          Browse Code Posts
+        </h1>
+        <div className="mt-3">
+          <BrowseFilters />
+        </div>
+      </div>
+      <div>
+        <BrowsePosts />
+      </div>
+    </div>
+  );
+}

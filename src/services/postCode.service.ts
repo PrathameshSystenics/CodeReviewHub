@@ -10,7 +10,7 @@ import {
 import { createTags } from "@/db/tag.repo";
 import { deleteFile, getFileContent, uploadFile } from "@/services/blobstorage";
 import { getLanguages } from "@/services/language.service";
-import { PostCodeRequest, PostWithRelations, PropertyBag } from "@/types/postCode";
+import { PostCodeRequest, PostListItem, PostWithRelations, PropertyBag } from "@/types/postCode";
 import { Languages } from "@generated/prisma/client";
 import status from "http-status";
 
@@ -170,9 +170,15 @@ export async function createPostFromFormData(
   );
 }
 
-export async function getPost(skip: number, take: number, userid?: string) {
+export async function getPost(
+  skip: number,
+  take: number,
+  userid?: string,
+  sort?: "newest" | "oldest",
+  statusfilter?: "all" | "accepted" | "open",
+): Promise<PostListItem[]> {
   try {
-    return getPosts(skip, take, userid);
+    return getPosts(skip, take, userid, sort, statusfilter);
   } catch (error) {
     console.error(error);
     throw error;

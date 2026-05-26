@@ -10,6 +10,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { FiEdit2 } from "react-icons/fi";
+import { LuEye, LuMessageSquare } from "react-icons/lu";
+import { VscCommentDiscussion } from "react-icons/vsc";
 import { toast } from "react-toastify";
 import PostDeleteConfirmModal from "./PostDeleteConfirmModal";
 import PostStatusBadge from "./PostStatusBadge";
@@ -25,6 +27,11 @@ interface PostShortProps {
   id: string;
   status: CodeStatus;
   published: boolean;
+  reviewCount?: number;
+  viewsCount?: number;
+  commentsCount?: number;
+  requireReview: boolean;
+  requireComments: boolean;
 }
 
 //#region Font Declaration
@@ -43,6 +50,10 @@ const PostShort = ({
   status,
   id,
   published,
+  reviewCount,
+  viewsCount,
+  requireComments,
+  requireReview,
 }: PostShortProps) => {
   const formatted = new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -176,8 +187,39 @@ const PostShort = ({
           </div>
         )}
 
-        {/* tags */}
-        <TagDisplay tag={tag} />
+        <div className="flex flex-row justify-between items-center flex-wrap gap-1 mt-3">
+          {/* tags */}
+          <TagDisplay tag={tag} />
+          {/* Counts */}
+          <div
+            className={cn(
+              inter.className,
+              "flex flex-row flex-wrap gap-3 text-slate-300",
+            )}
+          >
+            {/* Comments */}
+            {requireComments && (
+              <div className="flex items-center gap-1 flex-row text-[0.7em]">
+                <LuMessageSquare size={13} />
+                {viewsCount ?? 0} Comments
+              </div>
+            )}
+
+            {/* Reviews */}
+            {requireReview && (
+              <div className="flex items-center gap-1 flex-row text-[0.7em]">
+                <VscCommentDiscussion size={13} />
+                {reviewCount ?? 0} Reviews
+              </div>
+            )}
+
+            {/* Views */}
+            <div className="flex items-center gap-1 flex-row text-[0.7em]">
+              <LuEye size={13} />
+              {viewsCount ?? 0} Views
+            </div>
+          </div>
+        </div>
       </article>
     </div>
   );

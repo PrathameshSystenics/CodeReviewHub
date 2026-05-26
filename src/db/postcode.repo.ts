@@ -1,4 +1,5 @@
 import { prisma } from "@/prisma";
+import { CodeStatus, Sort } from "@/types/browse";
 import { PostCodeRequest, PostWithRelations, PropertyBag } from "@/types/postCode";
 import { Prisma } from "@generated/prisma/client";
 import { PostTagCreateManyInput } from "@generated/prisma/models";
@@ -86,49 +87,49 @@ export async function getPosts(
   skip: number,
   nexttoFetch: number,
   userid?: string,
+  sort: Sort = "newest",
+  statusfilter: CodeStatus = "all"
 ) {
   try {
     return prisma.post.findMany({
       where: {
         authorId: userid,
+        status: statusfilter === "all" ? undefined : statusfilter === "accepted" ? "ACCEPTED" : "OPEN"
       },
       skip: skip,
       take: nexttoFetch,
-      orderBy: {
-        createdAt: "desc",
-      },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        code: true,
-        language: true,
-        acceptedReviewId: true,
-        authorId: true,
-        blobName: true,
-        published: true,
-        requireComments: true,
-        requireReview: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
+      orderBy: [
+        { createdAt: sort === "newest" ? "desc" : "asc" },
+      ],
+      include: {
         postTags: {
           select: {
             tag: {
               select: {
-                name: true,
+                name: true
+              }
+            }
+          }
+        },
+        author: {
+          select: {
+            name: true,
+            image: true,
+            id: true
+          }
+        },
+        _count: {
+          select: {
+            reviews: true,
+            comments: {
+              where: {
+                parentId: null,
+                reviewId: null,
               },
             },
           },
         },
-      },
+      }
     });
   } catch (error) {
     console.error(error);

@@ -1,5 +1,5 @@
 import { APIResponse } from "@/types";
-import { SelectedPost } from "@/types/postCode";
+import { PostListItem } from "@/types/postCode";
 
 export async function createPostApi(
   formdata: FormData,
@@ -14,7 +14,7 @@ export async function createPostApi(
 export async function getRecentPosts(
   skip: number,
   take: number,
-): Promise<APIResponse<SelectedPost[]>> {
+): Promise<APIResponse<PostListItem[]>> {
   const response = await fetch(`/api/code-post?take=${take}&skip=${skip}`, {
     method: "GET",
     next: {
@@ -31,7 +31,7 @@ export async function deletePostapi(postid: string): Promise<APIResponse<string 
   return response.json();
 }
 
-export async function updatePostApi(postid: string, formdata: FormData):Promise<APIResponse<string>> {
+export async function updatePostApi(postid: string, formdata: FormData): Promise<APIResponse<string>> {
   const response = await fetch(`/api/code-post/${postid}`, {
     method: "PUT",
     body: formdata

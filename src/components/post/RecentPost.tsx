@@ -64,6 +64,10 @@ const RecentPost = () => {
               tag={post.postTags.map((t) => t.tag.name)}
               status={post.status}
               published={post.published}
+              requireComments={post.requireComments}
+              requireReview={post.requireReview}
+              commentsCount={post._count.comments}
+              reviewCount={post._count.reviews}
             />
           </div>
         );

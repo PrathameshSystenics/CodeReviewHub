@@ -12,22 +12,8 @@ export interface PostCodeRequest {
   requireReview: boolean;
 }
 
-export type SelectedPost = Prisma.PostGetPayload<{
-  select: {
-    id: true;
-    title: true;
-    description: true;
-    published: true;
-    language: true;
-    code: true;
-    blobName: true;
-    requireReview: true;
-    acceptedReviewId: true;
-    requireComments: true;
-    authorId: true;
-    status: true;
-    createdAt: true;
-    updatedAt: true;
+export type PostListItem = Prisma.PostGetPayload<{
+  include: {
     author: {
       select: {
         id: true;
@@ -40,6 +26,17 @@ export type SelectedPost = Prisma.PostGetPayload<{
         tag: {
           select: {
             name: true;
+          };
+        };
+      };
+    };
+    _count: {
+      select: {
+        reviews: true;
+        comments: {
+          where: {
+            parentId: null;
+            reviewId: null;
           };
         };
       };
