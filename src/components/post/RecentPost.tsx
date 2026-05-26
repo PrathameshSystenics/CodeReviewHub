@@ -8,6 +8,7 @@ import { Spinner } from "@/components/UI/spinner";
 const RecentPost = () => {
   const PAGE_SIZE = 10;
 
+  //#region Infinite React Query
   const {
     data,
     hasNextPage,
@@ -27,6 +28,7 @@ const RecentPost = () => {
       return itemCount === PAGE_SIZE ? pages.length * PAGE_SIZE : undefined;
     },
   });
+  //#endregion
 
   const posts = data?.pages.flatMap((page) => page.data ?? []) ?? [];
   return (

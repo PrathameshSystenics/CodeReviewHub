@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Inter, Space_Grotesk } from "next/font/google";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 
@@ -18,12 +18,14 @@ const inter = Inter({
 //#endregion
 
 const Navbar = () => {
+  //#region Hooks and State
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const session = useSession();
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const mobileDropdownRef = useRef<HTMLDivElement | null>(null);
+  //#endregion
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -56,29 +58,29 @@ const Navbar = () => {
     router.push("/post");
   };
 
+  //#region Use Effects
+  const handleClickOutside = useEffectEvent((event: MouseEvent) => {
+    const target = event.target as Node;
+    const clickedDesktopDropdown =
+      dropdownRef.current?.contains(target) ?? false;
+    const clickedMobileDropdown =
+      mobileDropdownRef.current?.contains(target) ?? false;
+
+    if (!clickedDesktopDropdown && !clickedMobileDropdown) {
+      setShowDropdown(false);
+    }
+  });
+
   useEffect(() => {
     if (!showDropdown) {
       return;
     }
-
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      const clickedDesktopDropdown =
-        dropdownRef.current?.contains(target) ?? false;
-      const clickedMobileDropdown =
-        mobileDropdownRef.current?.contains(target) ?? false;
-
-      if (!clickedDesktopDropdown && !clickedMobileDropdown) {
-        setShowDropdown(false);
-      }
-    };
-
     document.addEventListener("mousedown", handleClickOutside);
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showDropdown]);
+  //#endregion
 
   return (
     <header className="dark:bg-neutral">
@@ -124,14 +126,8 @@ const Navbar = () => {
           <nav className="hidden md:block pl-2 text-sm">
             <ul className="text-tertiary font-semibold flex flex-row gap-3">
               <li>
-                {/* TODO: Handle these Links */}
-                <Link href={"/posts"}>
+                <Link href={"/browse"}>
                   <span>POSTS</span>
-                </Link>
-              </li>
-              <li>
-                <Link href={"/reviews"}>
-                  <span>REVIEWS</span>
                 </Link>
               </li>
             </ul>
@@ -206,13 +202,8 @@ const Navbar = () => {
           <nav className="px-4 py-2">
             <ul className="text-tertiary font-semibold flex flex-col gap-2">
               <li>
-                <Link href={"/posts"} onClick={toggleMenu}>
+                <Link href={"/browse"} onClick={toggleMenu}>
                   <span>POSTS</span>
-                </Link>
-              </li>
-              <li>
-                <Link href={"/reviews"} onClick={toggleMenu}>
-                  <span>REVIEWS</span>
                 </Link>
               </li>
             </ul>
