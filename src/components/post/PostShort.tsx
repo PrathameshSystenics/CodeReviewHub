@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import PostDeleteConfirmModal from "./PostDeleteConfirmModal";
 import PostStatusBadge from "./PostStatusBadge";
 import TagDisplay from "./TagDisplay";
+import TimeAgoComponent from "./TimeAgoComponent";
 
 interface PostShortProps {
   title: string;
@@ -155,8 +156,7 @@ const PostShort = ({
         <div
           className={`${jetbrains_mono.className} mt-2 sm:mt-0 text-[0.7em] text-slate-400`}
         >
-          <span>Posted On </span>
-          <span>{formatted}</span>
+          Posted <TimeAgoComponent date={createdTime} />
         </div>
 
         {/* Description */}
