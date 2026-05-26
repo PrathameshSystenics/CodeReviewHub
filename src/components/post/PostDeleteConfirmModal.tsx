@@ -22,9 +22,7 @@ interface PostDeleteConfirmModalProps {
   onDelete: () => void;
 }
 
-const PostDeleteConfirmModal = ({
-  onDelete,
-}: PostDeleteConfirmModalProps) => {
+const PostDeleteConfirmModal = ({ onDelete }: PostDeleteConfirmModalProps) => {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>

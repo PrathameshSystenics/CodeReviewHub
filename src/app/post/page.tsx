@@ -1,8 +1,6 @@
-import { getOptionalServerSession } from "@/auth";
 import { Metadata } from "next";
 import dynamic from "next/dynamic";
 import { Inter, Space_Grotesk } from "next/font/google";
-import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Initiate New Review",

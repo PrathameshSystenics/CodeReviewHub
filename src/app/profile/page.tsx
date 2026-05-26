@@ -1,14 +1,13 @@
 "use server";
 
-import ProfileHeader from "@/components/profile/ProfileHeader";
-import RankCard from "@/components/profile/RankCard";
-import StatsGrid from "@/components/profile/StatsGrid";
-import ProfileTabs from "@/components/profile/ProfileTabs";
-import RecentReviews from "@/components/profile/RecentReviews";
-import RecentActivity from "@/components/profile/RecentActivity";
-import { Metadata } from "next";
 import { getOptionalServerSession } from "@/auth";
-import { redirect } from "next/navigation";
+import ProfileHeader from "@/components/profile/ProfileHeader";
+import ProfileTabs from "@/components/profile/ProfileTabs";
+import RankCard from "@/components/profile/RankCard";
+import RecentActivity from "@/components/profile/RecentActivity";
+import RecentReviews from "@/components/profile/RecentReviews";
+import StatsGrid from "@/components/profile/StatsGrid";
+import { Metadata } from "next";
 
 const validTabs = ["posts", "history", "comments"] as const;
 type Tab = (typeof validTabs)[number];

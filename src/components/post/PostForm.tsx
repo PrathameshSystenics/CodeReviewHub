@@ -4,13 +4,13 @@ import { getLanguages } from "@/api/language";
 import { createPostApi } from "@/api/postcode";
 import { getTags } from "@/api/tag";
 import { PostReviewInput, PostSchema } from "@/schemas/post";
-import type { Languages, Tag } from "@generated/prisma/client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Monaco, OnMount } from "@monaco-editor/react";
+import { useQuery } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import { Inter, Space_Grotesk } from "next/font/google";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { IoIosCloseCircle } from "react-icons/io";
 import { MdUploadFile } from "react-icons/md";
@@ -21,7 +21,6 @@ import { toast } from "react-toastify";
 import FormField from "../auth/FormField";
 import CodeSnippet from "../CodeSnippet";
 import Switch from "../UI/Switch";
-import { useQuery } from "@tanstack/react-query";
 
 //#region Font Declaration
 const space_grotesk = Space_Grotesk({

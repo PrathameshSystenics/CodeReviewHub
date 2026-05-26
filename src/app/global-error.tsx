@@ -123,7 +123,13 @@ export default function GlobalError({
               marginBottom: "1.5rem",
             }}
           >
-            <span style={{ color: "#e2e8f0", display: "block", marginBottom: "0.25rem" }}>
+            <span
+              style={{
+                color: "#e2e8f0",
+                display: "block",
+                marginBottom: "0.25rem",
+              }}
+            >
               Application
             </span>
             <span
@@ -199,7 +205,9 @@ export default function GlobalError({
                   marginBottom: "0.75rem",
                 }}
               >
-                <VscDebugConsole style={{ color: "#f87171", fontSize: "1.1rem" }} />
+                <VscDebugConsole
+                  style={{ color: "#f87171", fontSize: "1.1rem" }}
+                />
                 <span
                   className={jetbrains_mono.className}
                   style={{
@@ -294,8 +302,12 @@ export default function GlobalError({
                       marginTop: "1.25rem",
                       transition: "color 0.2s",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = "#cbd5e1")}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = "#64748b")}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = "#cbd5e1")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "#64748b")
+                    }
                     title="Copy error details"
                   >
                     <VscCopy style={{ fontSize: "0.85rem" }} />
@@ -330,7 +342,11 @@ export default function GlobalError({
                     </p>
                     <p
                       className={jetbrains_mono.className}
-                      style={{ color: "#fdba74", fontSize: "0.75rem", margin: 0 }}
+                      style={{
+                        color: "#fdba74",
+                        fontSize: "0.75rem",
+                        margin: 0,
+                      }}
                     >
                       {error.name || "Error"}
                     </p>
@@ -351,7 +367,11 @@ export default function GlobalError({
                       </p>
                       <p
                         className={jetbrains_mono.className}
-                        style={{ color: "#7dd3fc", fontSize: "0.75rem", margin: 0 }}
+                        style={{
+                          color: "#7dd3fc",
+                          fontSize: "0.75rem",
+                          margin: 0,
+                        }}
                       >
                         {error.digest}
                       </p>
@@ -393,9 +413,13 @@ export default function GlobalError({
                       Stack Trace
                     </span>
                     {showStack ? (
-                      <VscChevronUp style={{ color: "#64748b", fontSize: "0.85rem" }} />
+                      <VscChevronUp
+                        style={{ color: "#64748b", fontSize: "0.85rem" }}
+                      />
                     ) : (
-                      <VscChevronDown style={{ color: "#64748b", fontSize: "0.85rem" }} />
+                      <VscChevronDown
+                        style={{ color: "#64748b", fontSize: "0.85rem" }}
+                      />
                     )}
                   </button>
 
@@ -434,8 +458,8 @@ export default function GlobalError({
                   textAlign: "center",
                 }}
               >
-                This debug panel is only visible in development mode and will not
-                appear in production builds.
+                This debug panel is only visible in development mode and will
+                not appear in production builds.
               </p>
             </div>
           )}
