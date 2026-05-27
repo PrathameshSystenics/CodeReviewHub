@@ -18,8 +18,7 @@ const RecentPost = () => {
     isFetchingNextPage,
   } = useInfiniteQuery({
     queryKey: ["recent-posts"],
-    queryFn: (context) => {
-      const pageParam = (context as { pageParam?: number }).pageParam;
+    queryFn: ({ pageParam }) => {
       return getRecentPosts(pageParam ?? 0, PAGE_SIZE);
     },
     initialPageParam: 0,
@@ -57,6 +56,7 @@ const RecentPost = () => {
             <PostShort
               id={post.id}
               title={post.title}
+              authorId={post.authorId}
               description={post.description ?? ""}
               code={post.code ?? ""}
               language={post.language}

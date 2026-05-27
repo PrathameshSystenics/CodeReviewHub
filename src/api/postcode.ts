@@ -1,4 +1,5 @@
 import { APIResponse } from "@/types";
+import { CodeStatus, Sort } from "@/types/browse";
 import { PostListItem } from "@/types/postCode";
 
 export async function createPostApi(
@@ -14,8 +15,11 @@ export async function createPostApi(
 export async function getRecentPosts(
   skip: number,
   take: number,
+  sort: Sort = "newest",
+  filter: CodeStatus = "all",
+  include_user: boolean = true
 ): Promise<APIResponse<PostListItem[]>> {
-  const response = await fetch(`/api/code-post?take=${take}&skip=${skip}`, {
+  const response = await fetch(`/api/code-post?take=${take}&skip=${skip}&sort=${sort}&filter=${filter}&include_user=${include_user}`, {
     method: "GET",
     next: {
       revalidate: 60

@@ -133,7 +133,7 @@ const LoginForm = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`${space_grotesk.className} text-black w-full py-4 rounded-xs bg-linear-to-r from-primary to-primary-dark space-x-3 font-bold disabled:opacity-50`}
+              className={`${space_grotesk.className} cursor-pointer text-black w-full py-4 rounded-xs bg-linear-to-r from-primary to-primary-dark space-x-3 font-bold disabled:opacity-50`}
             >
               <span>{isSubmitting ? "Signing in..." : "Sign In"}</span>
               <FaArrowRight className="inline-block" size={15} />

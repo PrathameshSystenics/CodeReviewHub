@@ -178,7 +178,7 @@ export async function getPost(
   statusfilter?: "all" | "accepted" | "open",
 ): Promise<PostListItem[]> {
   try {
-    return getPosts(skip, take, userid, sort, statusfilter);
+    return await getPosts(skip, take, userid, sort, statusfilter);
   } catch (error) {
     console.error(error);
     throw error;

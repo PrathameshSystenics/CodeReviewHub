@@ -17,6 +17,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useTransition,
 } from "react";
 import { toast } from "react-toastify";
 import CodeLine from "./CodeLine";
@@ -47,6 +48,7 @@ const CodeDisplay = ({
 }: CodeDisplayProps) => {
   //#region State
   const [lines, setLines] = useState<Token[][] | null>(null);
+  const [isPending, startTransition] = useTransition();
   const [selectedStart, setSelectedStart] = useState<number | null>(null);
   const [selectedEnd, setSelectedEnd] = useState<number | null>(null);
   const [showPopover, setShowPopover] = useState(false);
@@ -67,17 +69,17 @@ const CodeDisplay = ({
   //#region Use Effects
   // Use Effect for Getting the Code by Line
   useEffect(() => {
-    let cancelled = false;
+    if (!code) return;
 
-    if (code) {
-      highlightCodeByLine(code, language).then((tokens) => {
-        if (!cancelled) setLines(tokens);
-      });
-    }
-
-    return () => {
-      cancelled = true;
-    };
+    startTransition(async () => {
+      try {
+        const tokens = await highlightCodeByLine(code, language);
+        setLines(tokens);
+      } catch (err) {
+        console.error("Shiki highlighting failed:", err);
+        setLines(null);
+      }
+    });
   }, [code, language]);
 
   const onMouseUp = useEffectEvent(() => {
@@ -291,7 +293,7 @@ const CodeDisplay = ({
           : plainLines.map((line, i) => (
               <div
                 key={i}
-                className={`${jetbrains_mono.className} flex items-stretch`}
+                className={`${jetbrains_mono.className} flex items-stretch transition-opacity duration-300 ${isPending ? "animate-pulse opacity-60" : "opacity-100"}`}
               >
                 <div className="w-13 shrink-0 flex items-center justify-end pr-2 select-none text-slate-600 text-xs border-r border-slate-700/30">
                   {i + 1}

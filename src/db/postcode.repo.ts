@@ -94,6 +94,7 @@ export async function getPosts(
     return prisma.post.findMany({
       where: {
         authorId: userid,
+        published: userid ? undefined : true,
         status: statusfilter === "all" ? undefined : statusfilter === "accepted" ? "ACCEPTED" : "OPEN"
       },
       skip: skip,
@@ -136,6 +137,7 @@ export async function getPosts(
     throw error;
   }
 }
+
 
 export async function deletePostCode(postId: string) {
   try {

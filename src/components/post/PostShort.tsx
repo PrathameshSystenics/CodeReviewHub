@@ -8,7 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { FiEdit2 } from "react-icons/fi";
 import { LuEye, LuMessageSquare } from "react-icons/lu";
 import { VscCommentDiscussion } from "react-icons/vsc";
@@ -17,6 +17,7 @@ import PostDeleteConfirmModal from "./PostDeleteConfirmModal";
 import PostStatusBadge from "./PostStatusBadge";
 import TagDisplay from "./TagDisplay";
 import TimeAgoComponent from "./TimeAgoComponent";
+import { useSession } from "next-auth/react";
 
 interface PostShortProps {
   title: string;
@@ -33,6 +34,7 @@ interface PostShortProps {
   commentsCount?: number;
   requireReview: boolean;
   requireComments: boolean;
+  authorId?: string;
 }
 
 //#region Font Declaration
@@ -55,19 +57,15 @@ const PostShort = ({
   viewsCount,
   requireComments,
   requireReview,
+  authorId,
 }: PostShortProps) => {
-  const formatted = new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  }).format(createdTime);
-
+  //#region State and Hooks
   const [codeHtml, setCodeHtml] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
   const queryclient = useQueryClient();
   const router = useRouter();
+  const user = useSession();
+  //#endregion
 
   const handleDelete = useCallback((postId: string) => {
     deletePostapi(postId).then((res) => {
@@ -87,40 +85,37 @@ const PostShort = ({
     router.push(`/post/${id}/edit`);
   };
 
-  useEffect(() => {
-    let cancelled = false;
+  const handlePostClick = () => {
+    router.push(`/post/${id}`);
+  };
 
-    async function highlight() {
+  //#region UseEffects
+  useEffect(() => {
+    if (!code) return;
+
+    startTransition(async () => {
       try {
         const html = await highlightCode(code, language);
-        if (!cancelled) {
-          setCodeHtml(html);
-        }
+        setCodeHtml(html);
       } catch (err) {
         console.error("Shiki highlighting failed:", err);
-        if (!cancelled) {
-          setCodeHtml(null);
-        }
+        setCodeHtml(null);
       }
-    }
-
-    if (code) {
-      highlight();
-    }
-
-    return () => {
-      cancelled = true;
-    };
+    });
   }, [code, language]);
+  //#endregion
 
   return (
     <div className="">
-      <article className="rounded-xl hover:bg-[#293550] transition-colors bg-[#202a40] p-5 backdrop-blur-sm">
+      <article
+        className="rounded-xl hover:bg-[#293550] transition-colors bg-[#202a40] p-5 backdrop-blur-sm cursor-pointer"
+        onClick={handlePostClick}
+      >
         <div className="flex items-center gap-3 sm:gap-0 flex-wrap justify-between">
           {/* Title and Language */}
           <div className="flex flex-row flex-wrap gap-2 items-center">
             {/* Title */}
-            <Link href={`/post/${id}`}>
+            <Link href={`/post/${id}`} onClick={(e) => e.stopPropagation()}>
               <h3
                 className={`${space_grotesk.className} text-lg font-bold text-slate-200 leading-snug py-1`}
               >
@@ -134,8 +129,8 @@ const PostShort = ({
               {language}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            {status === "OPEN" && (
+          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            {status === "OPEN" && user?.data?.user?.id === authorId && (
               <>
                 <button
                   className="p-2 text-slate-500 hover:text-slate-300 hover:bg-white/5 rounded-lg transition-colors"
@@ -174,12 +169,19 @@ const PostShort = ({
           <div className="mt-4 rounded-lg overflow-hidden border-s-4 border-[#2f4a63]">
             {codeHtml ? (
               <div
-                className="text-sm [&>pre]:p-4 [&>pre]:m-0 [&>pre]:overflow-x-auto"
+                className={cn(
+                  "text-sm [&>pre]:p-4 [&>pre]:m-0 [&>pre]:overflow-x-auto transition-opacity duration-300",
+                  isPending ? "opacity-50" : "opacity-100",
+                )}
                 dangerouslySetInnerHTML={{ __html: codeHtml }}
               />
             ) : (
               <pre
-                className={`${jetbrains_mono.className} p-4 text-sm text-slate-300 bg-[#0d1117] overflow-x-auto max-h-64`}
+                className={cn(
+                  jetbrains_mono.className,
+                  "p-4 text-sm text-slate-300 bg-[#0d1117] overflow-x-auto max-h-64 transition-opacity duration-300",
+                  isPending && "animate-pulse opacity-60",
+                )}
               >
                 <code>{code}</code>
               </pre>
@@ -187,7 +189,7 @@ const PostShort = ({
           </div>
         )}
 
-        <div className="flex flex-row justify-between items-center flex-wrap gap-1 mt-3">
+        <div className="flex flex-row justify-between items-center flex-wrap gap-3 mt-3">
           {/* tags */}
           <TagDisplay tag={tag} />
           {/* Counts */}
