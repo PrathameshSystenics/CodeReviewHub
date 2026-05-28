@@ -1,4 +1,5 @@
 import {
+  addView,
   assignTagToPost,
   createPostReview,
   deAssignTagFromPost,
@@ -170,6 +171,19 @@ export async function createPostFromFormData(
   );
 }
 
+export async function addViewToPost(post: PostWithRelations, userId: string) {
+  try {
+    if (post.postViews.some((value) => value.viewerId === userId)) {
+      return;
+    }
+    await addView(post.id, userId)
+    return;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
 export async function getPost(
   skip: number,
   take: number,
@@ -211,10 +225,10 @@ export async function deletePost(postId: string, userid: string) {
   }
 }
 
-export async function getPostByIdService(postId: string, includebag: PropertyBag) {
+export async function getPostByIdService(postId: string, includebag: PropertyBag, userId?: string,) {
   try {
     // Fetch the Post
-    const post = await getPostById(postId, includebag);
+    const post = await getPostById(postId, userId, includebag);
     if (!post) {
       throw new PostCodeServiceError("Post not found", status.NOT_FOUND);
     }
@@ -235,7 +249,7 @@ export async function updatePostFormData(
   postId: string,
   userId: string,
   postbody: FormData) {
-  const posttoUpdate = await getPostById(postId, {
+  const posttoUpdate = await getPostById(postId, undefined, {
     IncludeAuther: true,
     IncludeTags: true
   })

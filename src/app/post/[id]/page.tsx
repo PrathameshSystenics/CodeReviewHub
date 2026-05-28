@@ -8,6 +8,7 @@ import TagDisplay from "@/components/post/TagDisplay";
 import TimeAgoComponent from "@/components/post/TimeAgoComponent";
 import { cn } from "@/lib/utils";
 import {
+  addViewToPost,
   getPostByIdService,
   PostCodeServiceError,
 } from "@/services/postCode.service";
@@ -55,6 +56,7 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
     post = await getPostByIdService(id, {
       IncludeAuther: true,
       IncludeTags: true,
+      IncludeUserView: true,
     });
   } catch (error) {
     if (error instanceof PostCodeServiceError) {
@@ -76,6 +78,11 @@ export default async function PostPage({ params }: PageProps<"/post/[id]">) {
   owner = user?.user.id === post.authorId;
 
   if (!post.published && !owner) notFound();
+
+  // If viewed by the User Then add view to the post
+  if (user && post.authorId !== user.user.id) {
+    await addViewToPost(post, user.user.id);
+  }
 
   // Fetch the Review for the LoggedIn user
   if (post.requireReview && user) {

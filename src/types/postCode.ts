@@ -39,6 +39,7 @@ export type PostListItem = Prisma.PostGetPayload<{
     _count: {
       select: {
         reviews: true;
+        postViews: true,
         comments: {
           where: {
             parentId: null;
@@ -54,6 +55,7 @@ export type PostListItem = Prisma.PostGetPayload<{
 export type PropertyBag = {
   IncludeAuther?: boolean;
   IncludeTags?: boolean;
+  IncludeUserView?: boolean;
 }
 
 export type PostWithRelations = Prisma.PostGetPayload<{
@@ -65,6 +67,11 @@ export type PostWithRelations = Prisma.PostGetPayload<{
         image: true;
       };
     };
+    postViews: {
+      select: {
+        viewerId: true
+      }
+    },
     postTags: {
       select: {
         tag: {

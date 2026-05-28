@@ -119,8 +119,7 @@ const BrowsePosts = () => {
                 image: post.author.image,
                 name: post.author.name,
               }}
-              // TODO: Add the views count to the api and replace it with 0
-              viewsCount={0}
+              viewsCount={post._count.postViews}
             />
           );
         })}

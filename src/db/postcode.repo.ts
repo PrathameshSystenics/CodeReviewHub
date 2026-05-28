@@ -95,7 +95,7 @@ export async function getPosts(
       where: {
         authorId: userid,
         published: userid ? undefined : true,
-        status: statusfilter === "all" ? undefined : statusfilter === "accepted" ? "ACCEPTED" : "OPEN"
+        status: statusfilter === "all" ? undefined : statusfilter === "accepted" ? "ACCEPTED" : "OPEN",
       },
       skip: skip,
       take: nexttoFetch,
@@ -122,6 +122,7 @@ export async function getPosts(
         _count: {
           select: {
             reviews: true,
+            postViews: true,
             comments: {
               where: {
                 parentId: null,
@@ -136,6 +137,15 @@ export async function getPosts(
     console.error(error);
     throw error;
   }
+}
+
+export async function addView(postId: string, userId: string) {
+  return await prisma.postView.create({
+    data: {
+      postId: postId,
+      viewerId: userId
+    }
+  })
 }
 
 
@@ -156,7 +166,7 @@ export async function deletePostCode(postId: string) {
   }
 }
 
-export async function getPostById(postId: string, propertyBag?: PropertyBag): Promise<PostWithRelations | null> {
+export async function getPostById(postId: string, userId?: string, propertyBag?: PropertyBag): Promise<PostWithRelations | null> {
   try {
     const include: Prisma.PostInclude = {};
 
@@ -174,7 +184,29 @@ export async function getPostById(postId: string, propertyBag?: PropertyBag): Pr
       };
     }
 
+    if (propertyBag?.IncludeUserView) {
+      include.postViews = {
+        select: {
+          viewerId: true,
+        }
+      }
+    }
+
     const hasIncludes = Object.keys(include).length > 0;
+
+    if (userId) {
+      return await prisma.post.findFirst({
+        where: {
+          id: postId,
+          postViews: {
+            some: {
+              viewerId: userId
+            }
+          },
+        },
+        ...(hasIncludes && { include }),
+      }) as PostWithRelations | null;
+    }
 
     return await prisma.post.findUnique({
       where: { id: postId },
