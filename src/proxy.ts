@@ -5,25 +5,30 @@ import status from "http-status";
 
 export default async function proxy(request: NextRequest) {
     const user = await getOptionalServerSession();
+    const isApiRoute = request.nextUrl.pathname.startsWith('/api');
 
     // Authenticated user trying to access the root path → redirect to browse page
     if (user && request.nextUrl.pathname === "/") {
         return NextResponse.redirect(new URL("/browse", request.url));
     }
 
-    if (request.nextUrl.pathname.includes('api') && !user) {
-        return NextResponse.json<APIResponse<string>>(
-            {
-                message: "User not Found",
-                status: "invalid",
-            },
-            {
-                status: status.UNAUTHORIZED,
-            },
-        );
+    if (isApiRoute) {
+        if (request.method !== "GET" && !user) {
+            return NextResponse.json<APIResponse<string>>(
+                {
+                    message: "User not Found",
+                    status: "invalid",
+                },
+                {
+                    status: status.UNAUTHORIZED,
+                },
+            );
+        }
+        return NextResponse.next();
     }
+
     if (!user) {
-        return NextResponse.redirect(new URL("/", request.url))
+        return NextResponse.redirect(new URL("/", request.url));
     }
 }
 

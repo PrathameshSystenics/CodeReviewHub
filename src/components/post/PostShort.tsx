@@ -57,6 +57,7 @@ const PostShort = ({
   id,
   published,
   reviewCount,
+  commentsCount,
   viewsCount,
   requireComments,
   requireReview,
@@ -233,7 +234,7 @@ const PostShort = ({
             {requireComments && (
               <div className="flex items-center gap-1 flex-row text-[0.7em]">
                 <LuMessageSquare size={13} />
-                {viewsCount ?? 0} Comments
+                {commentsCount ?? 0} Comments
               </div>
             )}
 
