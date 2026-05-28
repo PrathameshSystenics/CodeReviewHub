@@ -1,6 +1,8 @@
+import { getOptionalServerSession } from "@/auth";
 import CodeSnippet from "@/components/CodeSnippet";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { BiCommentEdit } from "react-icons/bi";
 import { BsQuestionSquareFill } from "react-icons/bs";
 import {
@@ -56,7 +58,12 @@ const metrics = [
   { value: "85k", label: "RESOLVED ISSUES", className: "text-slate-300" },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const user = await getOptionalServerSession();
+  if (user) {
+    redirect("/browse");
+  }
+
   return (
     <div className="text-white">
       <section className="relative overflow-hidden border-b border-white/6">

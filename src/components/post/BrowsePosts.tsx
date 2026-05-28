@@ -114,6 +114,11 @@ const BrowsePosts = () => {
               title={post.title}
               commentsCount={post._count.comments}
               reviewCount={post._count.reviews}
+              author={{
+                id: post.author.id,
+                image: post.author.image,
+                name: post.author.name,
+              }}
               // TODO: Add the views count to the api and replace it with 0
               viewsCount={0}
             />

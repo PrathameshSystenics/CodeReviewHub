@@ -12,6 +12,12 @@ export interface PostCodeRequest {
   requireReview: boolean;
 }
 
+export type PostAuthor = {
+  id: string;
+  name: string | null;
+  image: string | null;
+}
+
 export type PostListItem = Prisma.PostGetPayload<{
   include: {
     author: {

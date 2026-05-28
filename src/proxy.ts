@@ -6,6 +6,11 @@ import status from "http-status";
 export default async function proxy(request: NextRequest) {
     const user = await getOptionalServerSession();
 
+    // Authenticated user trying to access the root path → redirect to browse page
+    if (user && request.nextUrl.pathname === "/") {
+        return NextResponse.redirect(new URL("/browse", request.url));
+    }
+
     if (request.nextUrl.pathname.includes('api') && !user) {
         return NextResponse.json<APIResponse<string>>(
             {

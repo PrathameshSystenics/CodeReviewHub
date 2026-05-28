@@ -18,6 +18,8 @@ import PostStatusBadge from "./PostStatusBadge";
 import TagDisplay from "./TagDisplay";
 import TimeAgoComponent from "./TimeAgoComponent";
 import { useSession } from "next-auth/react";
+import { PostAuthor } from "@/types/postCode";
+import UserProfileImage from "../auth/UserProfileImage";
 
 interface PostShortProps {
   title: string;
@@ -35,6 +37,7 @@ interface PostShortProps {
   requireReview: boolean;
   requireComments: boolean;
   authorId?: string;
+  author?: PostAuthor;
 }
 
 //#region Font Declaration
@@ -58,6 +61,7 @@ const PostShort = ({
   requireComments,
   requireReview,
   authorId,
+  author,
 }: PostShortProps) => {
   //#region State and Hooks
   const [codeHtml, setCodeHtml] = useState<string | null>(null);
@@ -111,47 +115,77 @@ const PostShort = ({
         className="rounded-xl hover:bg-[#293550] transition-colors bg-[#202a40] p-5 backdrop-blur-sm cursor-pointer"
         onClick={handlePostClick}
       >
-        <div className="flex items-center gap-3 sm:gap-0 flex-wrap justify-between">
-          {/* Title and Language */}
-          <div className="flex flex-row flex-wrap gap-2 items-center">
-            {/* Title */}
-            <Link href={`/post/${id}`} onClick={(e) => e.stopPropagation()}>
-              <h3
-                className={`${space_grotesk.className} text-lg font-bold text-slate-200 leading-snug py-1`}
-              >
-                {title}
-              </h3>
-            </Link>
-            {/* Language */}
-            <span
-              className={`${jetbrains_mono.className} border bg-[#1a2746] text-xs border-gray-500/90 text-green-300 px-3`}
-            >
-              {language}
-            </span>
-          </div>
-          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-            {status === "OPEN" && user?.data?.user?.id === authorId && (
-              <>
-                <button
-                  className="p-2 text-slate-500 hover:text-slate-300 hover:bg-white/5 rounded-lg transition-colors"
-                  onClick={handleEdit}
+        <div className="flex flex-items flex-row gap-2 items-center">
+          {author && (
+            <UserProfileImage
+              badgeclassName="px-3 py-3 text-[0.9em]"
+              imageclassName="w-10 h-10"
+              name={author?.name!}
+              image={author?.image}
+            />
+          )}
+          <div className="w-full">
+            <div className="flex items-center gap-3 sm:gap-0 flex-wrap justify-between">
+              {/* Title and Language */}
+              <div className="flex flex-row flex-wrap gap-2 items-center">
+                {/* Title */}
+                <Link href={`/post/${id}`} onClick={(e) => e.stopPropagation()}>
+                  <h3
+                    className={`${space_grotesk.className} text-lg font-bold text-slate-200 leading-snug py-1`}
+                  >
+                    {title}
+                  </h3>
+                </Link>
+                {/* Language */}
+                <span
+                  className={`${jetbrains_mono.className} border bg-[#1a2746] text-xs border-gray-500/90 text-green-300 px-3`}
                 >
-                  <FiEdit2 className="text-sm" />
-                </button>
-                <PostDeleteConfirmModal
-                  postId={id}
-                  onDelete={() => handleDelete(id)}
-                />
-              </>
-            )}
-            <PostStatusBadge status={status} isDraft={!published} />
+                  {language}
+                </span>
+              </div>
+              <div
+                className="flex items-center gap-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {status === "OPEN" && user?.data?.user?.id === authorId && (
+                  <>
+                    <button
+                      className="p-2 text-slate-500 hover:text-slate-300 hover:bg-white/5 rounded-lg transition-colors"
+                      onClick={handleEdit}
+                    >
+                      <FiEdit2 className="text-sm" />
+                    </button>
+                    <PostDeleteConfirmModal
+                      postId={id}
+                      onDelete={() => handleDelete(id)}
+                    />
+                  </>
+                )}
+                <PostStatusBadge status={status} isDraft={!published} />
+              </div>
+            </div>
+            {/* time */}
+            <div
+              className={`${jetbrains_mono.className} mt-2 space-x-1 sm:mt-0 text-[0.7em] text-slate-400`}
+            >
+              {author && (
+                <span className={cn(inter.className)}>
+                  Posted by{" "}
+                  <Link
+                    href={`/browse?user=${author.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-primary"
+                  >
+                    {author.id === user.data?.user.id ? "You" : author.name}
+                  </Link>{" "}
+                  •
+                </span>
+              )}
+              <span>
+                Posted <TimeAgoComponent date={createdTime} />
+              </span>
+            </div>
           </div>
-        </div>
-        {/* time */}
-        <div
-          className={`${jetbrains_mono.className} mt-2 sm:mt-0 text-[0.7em] text-slate-400`}
-        >
-          Posted <TimeAgoComponent date={createdTime} />
         </div>
 
         {/* Description */}
