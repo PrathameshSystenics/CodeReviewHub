@@ -13,7 +13,6 @@ const inter = Inter({ subsets: ["latin"] });
 const TagDisplay = ({ tag }: TagDisplayProps) => {
   return (
     <div className="flex flex-row flex-wrap gap-2 text-xs">
-      {/* TODO: Make the tag as clickable link and navigate to browse page according to that tag */}
       {tag.map((value, index) => {
         return (
           <span

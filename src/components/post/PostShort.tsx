@@ -118,7 +118,7 @@ const PostShort = ({
         <div className="flex flex-items flex-row gap-2 items-center">
           {author && (
             <UserProfileImage
-              badgeclassName="px-3 py-3 text-[0.9em]"
+              badgeclassName="px-3 py-2.5 text-[0.9em]"
               imageclassName="w-10 h-10"
               name={author?.name!}
               image={author?.image}
@@ -171,13 +171,9 @@ const PostShort = ({
               {author && (
                 <span className={cn(inter.className)}>
                   Posted by{" "}
-                  <Link
-                    href={`/browse?user=${author.id}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-primary"
-                  >
+                  <span className="text-primary">
                     {author.id === user.data?.user.id ? "You" : author.name}
-                  </Link>{" "}
+                  </span>{" "}
                   •
                 </span>
               )}

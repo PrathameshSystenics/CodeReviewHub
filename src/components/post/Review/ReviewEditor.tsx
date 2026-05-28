@@ -4,6 +4,7 @@ import { addReviewForPostApi } from "@/api/review";
 import { Button } from "@/components/UI/button";
 import { Spinner } from "@/components/UI/spinner";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
 import "@uiw/react-markdown-preview/markdown.css";
 import {
   bold,
@@ -56,6 +57,7 @@ const ReviewEditor = ({ postId }: ReviewEditorProps) => {
   const [value, setValue] = useState<string>("");
   const [mode, setMode] = useState<PreviewType>("edit");
   const [posting, setPosting] = useState<boolean>(false);
+  const queryclient = useQueryClient();
   //#endregion
 
   const handleValueChange = (value: string | undefined) => {
@@ -63,7 +65,6 @@ const ReviewEditor = ({ postId }: ReviewEditorProps) => {
   };
 
   const handlePostReviewClick = useCallback(async () => {
-    console.log(value);
     setPosting(true);
     const response = await addReviewForPostApi(postId, {
       content: value,
@@ -72,7 +73,10 @@ const ReviewEditor = ({ postId }: ReviewEditorProps) => {
       setPosting(false);
       toast.success("Review Added for the Post");
       setValue("");
-      // TODO: Update the Query Client to get the Review List
+      queryclient.invalidateQueries({
+        queryKey: ["reviews", postId],
+        exact: false,
+      });
     } else {
       toast.error(response.message);
       setPosting(false);

@@ -5,15 +5,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BiCommentEdit } from "react-icons/bi";
 import { BsQuestionSquareFill } from "react-icons/bs";
-import {
-  FiArrowUpRight,
-  FiCode,
-  FiUsers,
-} from "react-icons/fi";
+import { FiArrowUpRight, FiCode, FiUsers } from "react-icons/fi";
 import { GoCommentDiscussion } from "react-icons/go";
-import {
-  LuBadgeCheck,
-} from "react-icons/lu";
+import { LuBadgeCheck } from "react-icons/lu";
 import { MdTerminal } from "react-icons/md";
 
 //#region Font Declaration
@@ -85,14 +79,19 @@ export default async function Home() {
                 feedback.
               </p>
 
-              {/* TODO: Add the Handling when clicked on these button */}
               <div className={`${inter.className} mt-9 flex flex-wrap gap-4`}>
-                <button className="rounded-md border border-sky-300/80 bg-linear-to-r from-primary to-primary-dark px-6 py-3 text-sm font-semibold text-slate-950 shadow-[0_10px_25px_rgba(86,201,255,0.25)] transition hover:brightness-105">
+                <Link
+                  href={"/login"}
+                  className="rounded-md border border-sky-300/80 bg-linear-to-r from-primary to-primary-dark px-6 py-3 text-sm font-semibold text-slate-950 shadow-[0_10px_25px_rgba(86,201,255,0.25)] transition hover:brightness-105"
+                >
                   Start Reviewing
-                </button>
-                <button className="rounded-md border border-white/14 bg-white/4 px-6 py-3 text-sm font-semibold text-primary transition hover:border-white/25">
+                </Link>
+                <Link
+                  href={"/register"}
+                  className="rounded-md border border-white/14 bg-white/4 px-6 py-3 text-sm font-semibold text-primary transition hover:border-white/25"
+                >
                   Post a Snippet
-                </button>
+                </Link>
               </div>
             </div>
 
